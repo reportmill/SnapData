@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SpringView width="200" height="395" PrefWidth="200" PrefHeight="395">
+  <Label Name="FilesLabel" x="2" y="2" width="198" height="26" GrowWidth="true" text="      Project Files">
+    <BevelBorder />
+    <font name="Arial Bold" size="16" />
+  </Label>
+  <Button Name="AllFilesButton" x="5" y="5" width="22" height="20" ToolTip="Toggle Files Tree/List" image="FilesTree.png" />
+  <Button Name="NewFileButton" x="155" y="5" width="20" height="20" LeanX="RIGHT" image="Add.png" />
+  <MenuButton Name="MenuButton" x="177" y="5" width="20" height="20" LeanX="RIGHT">
+    <MenuItem Name="NewFileMenuItem" text="New File..." />
+    <MenuItem Name="RemoveFileMenuItem" text="Remove File(s)..." />
+    <MenuItem Name="RenameFileMenuItem" text="Rename File..." />
+    <MenuItem Name="DuplicateFileMenuItem" text="Duplicate File..." />
+    <MenuItem Name="RefreshFileMenuItem" text="Refresh File(s)" />
+    <MenuItem />
+    <MenuItem Name="OpenInTextEditorMenuItem" text="Open File in Text Editor" />
+    <MenuItem Name="OpenInBrowserMenuItem" text="Open File in Separate Browser" />
+    <MenuItem Name="ShowFileMenuItem" text="Show File in Explorer/Finder" />
+  </MenuButton>
+  <ListView Name="FilesList"  y="30" width="200" height="365" GrowWidth="true" GrowHeight="true" ItemKey="Text">
+    <font name="Arial" size="15" />
+  </ListView>
+  <TreeView Name="FilesTree" y="30" width="200" height="365" GrowWidth="true" GrowHeight="true" />
+</SpringView>

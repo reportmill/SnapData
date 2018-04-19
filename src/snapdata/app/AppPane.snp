@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SplitView PrefWidth="958" PrefHeight="684" GrowHeight="true">
+  <SplitView Name="SideBarSplitView" PrefWidth="220" Vertical="true" />
+  <SplitView Name="BrowserBox" Vertical="true">
+    <VBox Name="BrowserAndStatusBar" Padding="0,4,0,4" GrowHeight="true" FillWidth="true">
+      <View Name="Browser" GrowHeight="true" Class="snap.viewx.WebBrowser" />
+      <StackView Name="StatusBar" PrefHeight="20">
+        <Label Name="StatusText" LeanX="LEFT" />
+        <ProgressBar Name="ProgressBar" PrefWidth="80" PrefHeight="16" Visible="false" LeanX="CENTER" />
+        <Button Name="ShowTrayButton" PrefWidth="60" PrefHeight="16" LeanX="CENTER" text="Show Tray" />
+        <Label Name="ActivityText" LeanX="RIGHT" />
+      </StackView>
+    </VBox>
+  </SplitView>
+</SplitView>

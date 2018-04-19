@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2010, ReportMill Software. All rights reserved.
  */
-package snapdata;
+package snapdata.data;
 import java.util.*;
 import snap.util.*;
 import snap.util.JSONArchiver.*;

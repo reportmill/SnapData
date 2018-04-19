@@ -1,4 +1,4 @@
-package snapdata;
+package snapdata.data;
 import java.util.*;
 import snap.util.StringUtils;
 
