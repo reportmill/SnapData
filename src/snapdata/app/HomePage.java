@@ -2,7 +2,7 @@ package snapdata.app;
 import snap.gfx.*;
 import snap.view.*;
 import snap.viewx.WebPage;
-import snap.web.WebFile;
+import snap.web.*;
 
 /**
  * A WebPage subclass that is the default homepage for SnapData apps.
@@ -28,7 +28,7 @@ public AppPane getAppPane()  { return _appPane; }
 /**
  * Returns the AppPane RootSite.
  */
-//public WebSite getRootSite()  { return getAppPane().getRootSite(); }
+public WebSite getAppSite()  { return getAppPane().getSite(); }
 
 /**
  * Override to put in Page pane.
@@ -74,7 +74,7 @@ public void respondUI(ViewEvent anEvent)
     if(anEvent.equals("NewDataTable") && anEvent.isMouseRelease()) {
         
         // Create proxy file and page
-        WebFile file = getSite().createFile("/Untitled.table", false);
+        WebFile file = getAppSite().createFile("/Untitled.table", false);
         WebPage page = getBrowser().createPage(file);
         
         // Use to create real file and save
@@ -84,7 +84,7 @@ public void respondUI(ViewEvent anEvent)
     
         // Select file and show in tree
         _appPane.setSelectedFile(file);
-        //showInTree(file);
+        _appPane._filesPane.showInTree(file);
     }
     
     // Handle NewDataView

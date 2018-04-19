@@ -16,7 +16,7 @@ public DataTablePane open(Object aSource)  { return this; }
 /**
  * Provides a WebPage version of DataTablePane.
  */
-public class Page extends WebPage {
+public static class Page extends WebPage {
 
     /**
      * Override to wrap ReportPage in pane with EditButton.

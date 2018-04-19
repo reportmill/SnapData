@@ -16,13 +16,10 @@ public class AppFilesPane extends ViewOwner {
     AppPane               _appPane;
 
     // The file tree
-    TreeView     _filesTree; //<AppFile>
+    TreeView <WebFile>    _filesTree;
     
     // The file list
-    ListView     _filesList; //<AppFile>
-    
-    // The root AppFiles (for TreeView)
-    //List <AppFile>        _rootFiles;
+    ListView <WebFile>    _filesList;
     
     // The default HomePage
     HomePage              _homePage;
@@ -42,6 +39,21 @@ public AppFilesPane(AppPane anAppPane)  { _appPane = anAppPane; }
 public AppPane getAppPane()  { return _appPane; }
 
 /**
+ * Returns the app site.
+ */
+public WebSite getSite()  { return _appPane.getSite(); }
+
+/**
+ * Returns the root directory.
+ */
+public WebFile getRootDir()  { return getSite().getRootDir(); }
+
+/**
+ * Returns the root files.
+ */
+public List <WebFile> getRootFiles()  { return getRootDir().getFiles(); }
+
+/**
  * Returns the selected file.
  */
 public WebFile getSelectedFile()  { return _appPane.getSelectedFile(); }
@@ -57,14 +69,10 @@ public List <WebFile> getSelectedFiles()
     //if(item!=null && item.getFile()!=null) files.add(item.getFile()); return files;
 }
 
-/**
- * Returns the top level site.
- */
+/** Returns the top level site. */
 //public WebSite getRootSite()  { return _appPane.getRootSite(); }
 
-/**
- * Returns the selected site.
- */
+/** Returns the selected site. */
 //public WebSite getSelectedSite()  { return _appPane.getSelectedSite(); }
 
 /**
@@ -110,36 +118,36 @@ public WebBrowser getBrowser()  { return _appPane.getBrowser(); }
 /**
  * Called to update a file in FilesPane.FilesTree.
  */
-/*public void updateFile(WebFile aFile)
+public void updateFile(WebFile aFile)
 {
-    List <AppFile> afiles = new ArrayList();
-    for(WebFile file=aFile;file!=null;file=file.getParent()) {
-        AppFile afile = getAppFile(file);
-        if(afile!=null) { afiles.add(afile); if(file==aFile) afile._children = null; }
-    }
-    _filesTree.updateItems(afiles.toArray(new AppFile[0]));
-    _filesList.updateItems(afiles.toArray(new AppFile[0]));
+    List <WebFile> files = new ArrayList();
+    for(WebFile file=aFile;file!=null;file=file.getParent()) files.add(file);
+    WebFile filesAry[] = files.toArray(new WebFile[files.size()]);
+    _filesTree.updateItems(filesAry);
+    _filesList.updateItems(filesAry);
     if(aFile.isDir()) resetLater();
-}*/
+}
 
 /**
  * Shows the given file in tree.
  */
-/*public void showInTree(WebFile aFile)
+public void showInTree(WebFile aFile)
 {
-    // Get AppFile and return if already visible
-    AppFile afile = getAppFile(aFile);
-    if(_filesTree.getItems().contains(afile))
+    // Return if file already visible
+    if(_filesTree.getItems().contains(aFile))
         return;
         
     // Make sure parent is showing and expand item for parent
-    showInTree(aFile.getParent());
-    _filesTree.expandItem(afile.getParent());
+    WebFile par = aFile.getParent();
+    if(par!=null) {
+        showInTree(par);
+        _filesTree.expandItem(par);
+    }
     
     // If file is SelectedFile, make FilesTree select it
     if(aFile==getSelectedFile())
-        _filesTree.setSelItem(afile);
-}*/
+        _filesTree.setSelItem(aFile);
+}
 
 /**
  * Initializes UI panel.
@@ -148,7 +156,7 @@ protected void initUI()
 {
     // Get the FilesTree
     _filesTree = getView("FilesTree", TreeView.class);
-    //_filesTree.setResolver(new AppFile.AppFileTreeResolver());
+    _filesTree.setResolver(new FileTreeResolver());
     _filesTree.setRowHeight(20);
     
     // Get FilesList
@@ -159,9 +167,10 @@ protected void initUI()
     enableEvents(_filesList, MousePress, MouseRelease); enableEvents(_filesList, DragEvents);
     
     // Create RootFiles for TreeView (one for each open project)
-    //_filesTree.setItems(getRootFiles());
-    //_filesTree.expandItem(getRootFiles().get(0));
-    if(_filesTree.getItems().size()>1) _filesTree.expandItem(_filesTree.getItems().get(1));
+    List <WebFile> files = getRootFiles();
+    _filesTree.setItems(files);
+    if(files.size()>0) _filesTree.expandItem(files.get(0));
+    //if(_filesTree.getItems().size()>1) _filesTree.expandItem(_filesTree.getItems().get(1));
     
     // Enable events to get MouseUp on TreeView
     enableEvents(_filesTree, MousePress, MouseRelease, DragGesture); enableEvents(_filesTree, DragEvents);
@@ -169,7 +178,6 @@ protected void initUI()
     // Register for copy/paste
     addKeyActionHandler("CopyAction", "Shortcut+C");
     addKeyActionHandler("PasteAction", "Shortcut+V");
-    
         
     // Register for WinActivated update
     _appPane.getWindow().addEventHandler(e -> windowDidActivate(), WinActivate);
@@ -182,16 +190,13 @@ public void resetUI()
 {
     // Repaint tree
     WebFile file = getAppPane().getSelectedFile();
-    //AppFile afile = getAppFile(file);
-    //_filesTree.setItems(getRootFiles());
-    //_filesTree.setSelItem(afile);
+    _filesTree.setItems(getRootFiles());
+    _filesTree.setSelItem(file);
     
     // Update FilesList
     List <WebFile> wfiles = _appPane._toolBar._openFiles;
-    List afiles = new ArrayList(wfiles.size());
-    //for(WebFile wf : wfiles) afiles.add(getAppFile(wf));
-    //_filesList.setItems(afiles);
-    //_filesList.setSelItem(afile);
+    _filesList.setItems(wfiles);
+    _filesList.setSelItem(file);
 }
 
 /**
@@ -246,11 +251,10 @@ public void respondUI(ViewEvent anEvent)
         }
         
         // Handle Selection event: Select file for tree selection
-        /*else if(anEvent.isActionEvent()) {
-            AppFile item = (AppFile)anEvent.getSelItem();
-            WebFile file = item!=null? item.getFile() : null;
+        else if(anEvent.isActionEvent()) {
+            WebFile file = (WebFile)anEvent.getSelItem();
             _appPane.setSelectedFile(file);
-        }*/
+        }
     }
     
     // Handle AllFilesButton
@@ -567,4 +571,23 @@ private void handleBookmarkEvent(ViewEvent anEvent)
 
     static Border            CLOSE_BOX_BORDER1 = Border.createLineBorder(Color.LIGHTGRAY,.5);
     static Border            CLOSE_BOX_BORDER2 = Border.createLineBorder(Color.BLACK,1);
+    
+/**
+ * A TreeResolver for WebFiles.
+ */
+private class FileTreeResolver extends TreeResolver <WebFile> {
+    
+    /** Returns the parent of given item. */
+    public WebFile getParent(WebFile anItem)  { return anItem.getParent(); }
+
+    /** Whether given object is a parent (has children). */
+    public boolean isParent(WebFile anItem)  { return anItem.isDir(); }
+
+    /** Returns the children. */
+    public WebFile[] getChildren(WebFile aPar)  { return aPar.getFiles().toArray(new WebFile[aPar.getFileCount()]); }
+
+    /** Returns the text to be used for given item. */
+    public String getText(WebFile anItem)  { return anItem.getName(); }
+}
+
 }
