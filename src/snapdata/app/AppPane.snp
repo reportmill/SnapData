@@ -3,7 +3,7 @@
   <SplitView Name="SideBarSplitView" PrefWidth="220" Vertical="true" />
   <SplitView Name="BrowserBox" Vertical="true">
     <VBox Name="BrowserAndStatusBar" Padding="0,4,0,4" GrowHeight="true" FillWidth="true">
-      <View Name="Browser" GrowHeight="true" Class="snap.viewx.WebBrowser" />
+      <View Name="Browser" GrowHeight="true" Class="snapdata.app.AppBrowser" />
       <StackView Name="StatusBar" PrefHeight="20">
         <Label Name="StatusText" LeanX="LEFT" />
         <ProgressBar Name="ProgressBar" PrefWidth="80" PrefHeight="16" Visible="false" LeanX="CENTER" />

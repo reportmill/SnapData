@@ -9,7 +9,10 @@ import snap.web.*;
 public class AppPane extends ViewOwner {
     
     // The SourceURL
-    WebURL               _url;
+    WebURL               _url = WebURL.getURL("/tmp/MyApp");
+    
+    // The Site
+    WebSite              _site;
     
     // The selected file
     WebFile              _selFile;
@@ -39,6 +42,25 @@ public class AppPane extends ViewOwner {
  * Returns the URL to the app.
  */
 public WebURL getSourceURL()  { return _url; }
+
+/**
+ * Returns the Site.
+ */
+public WebSite getSite()
+{
+    // If already set, just return
+    if(_site!=null) return _site;
+    
+    // Set from URL
+    _site = _url.getAsSite();
+    
+    // If rood dir doesn't exist, save
+    if(!_site.getRootDir().getExists())
+        _site.getRootDir().save();
+        
+    // Return site
+    return _site;
+}
 
 /**
  * Returns the selected file.
