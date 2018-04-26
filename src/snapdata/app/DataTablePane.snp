@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ColView Padding="4" Spacing="4">
+<ColView>
   <RowView Padding="4" GrowWidth="true" Spacing="4">
     <Label text="Records:">
-      <font name="Arial" size="15" />
+      <font name="Arial Bold" size="16" />
     </Label>
     <Button Padding="2,6,2,6" LeanX="RIGHT" text="Import Data" />
   </RowView>
-  <TableView MinWidth="220" MinHeight="120" GrowWidth="true" GrowHeight="true" ShowHeader="false">
-    <LineBorder Color="#c0c0c0" />
-  </TableView>
-  <RowView Padding="4" GrowWidth="true" Spacing="4">
-    <TabView MinWidth="220" MinHeight="120" GrowWidth="true">
+  <SplitView Vertical="true" GrowWidth="true" GrowHeight="true">
+    <TableView Name="RowsTable" MinWidth="220" MinHeight="120" GrowWidth="true" GrowHeight="true" ShowHeader="false">
+      <LineBorder Color="#c0c0c0" />
+    </TableView>
+    <TabView Name="TabView" MinWidth="220" MinHeight="120" GrowWidth="true">
       <BoxView title="One" />
     </TabView>
-  </RowView>
+  </SplitView>
   <RowView Padding="4" GrowWidth="true" Spacing="4">
     <Button PrefWidth="22" PrefHeight="22" Padding="2" text="+" />
     <Button PrefWidth="22" PrefHeight="22" Padding="2" text="-" />
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" LeanX="CENTER" text="&lt;&lt;" />
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" text="&lt;" />
-    <TextField PrefWidth="80" ColCount="12" />
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" text="&gt;" />
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" text="&gt;&gt;" />
+    <Button Name="RowBackAllButton" PrefWidth="22" PrefHeight="20" Padding="2" LeanX="CENTER" text="&lt;&lt;" />
+    <Button Name="RowBackButton" PrefWidth="22" PrefHeight="20" Padding="2" text="&lt;" />
+    <TextField Name="RowText" PrefWidth="80" PrefHeight="20" Align="CENTER" ColCount="12" />
+    <Button Name="RowNextButton" PrefWidth="22" PrefHeight="20" Padding="2" text="&gt;" />
+    <Button Name="RowNextAllButton" PrefWidth="22" PrefHeight="20" Padding="2" text="&gt;&gt;" />
   </RowView>
 </ColView>

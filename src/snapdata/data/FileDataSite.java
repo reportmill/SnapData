@@ -18,7 +18,7 @@ public class FileDataSite extends DataSite {
     Set <Entity>                  _dirtyEntities = new HashSet();
     
     // Table data file extension
-    static final String           TableEntityFileExt = ".entity"; 
+    static final String           TableEntityFileExt = ".table";  // Was .entity
     static final String           TableDataFileExt = ".csv"; 
 
 /**
@@ -26,11 +26,33 @@ public class FileDataSite extends DataSite {
  */
 protected Entity getEntityImpl(String aName) throws Exception
 {
-    Entity entity = super.getEntityImpl(aName); if(entity!=null) return entity;
+    Entity entity = null; //super.getEntityImpl(aName); if(entity!=null) return entity;
     WebFile entityFile = getTableEntityFile(aName, false); if(entityFile==null) return null;
     entity = createEntity(aName);
+    if(entityFile.getBytes().length<20)
+        makeAddrFile();
     entity.fromBytes(entityFile.getBytes());
     return entity;
+}
+
+void makeAddrFile()
+{
+    Entity entity = new Entity("Address");
+    Property id = new Property("Id", Property.NumberType.Integer); id.setPrimary(true);
+    Property name = new Property("Name", Property.Type.String);
+    Property street = new Property("Street", Property.Type.String);
+    Property city = new Property("CityStateZip", Property.Type.String);
+    Property phone = new Property("Phone", Property.Type.String);
+    entity.addProperty(id);
+    entity.addProperty(name);
+    entity.addProperty(street);
+    entity.addProperty(city);
+    entity.addProperty(phone);
+    
+    byte bytes[] = entity.toBytes();
+    WebFile efile = getTableEntityFile("Address", true);
+    efile.setBytes(bytes);
+    efile.save();
 }
 
 /**
@@ -195,9 +217,9 @@ public void flush() throws Exception
  */
 protected WebFile getTableEntityFile(String aName, boolean doCreate)
 {
-    String path = "/FileDB/" + aName + TableEntityFileExt;
-    WebFile tfile = _wsite.getSandbox().getFile(path);
-    if(tfile==null && doCreate) tfile = _wsite.getSandbox().createFile(path, false);
+    String path = "/" + aName + TableEntityFileExt;
+    WebFile tfile = _wsite.getFile(path);
+    if(tfile==null && doCreate) tfile = _wsite.createFile(path, false);
     return tfile;
 }
 
@@ -206,9 +228,9 @@ protected WebFile getTableEntityFile(String aName, boolean doCreate)
  */
 protected WebFile getTableDataFile(String aName, boolean doCreate)
 {
-    String path = "/FileDB/" + aName + TableDataFileExt;
-    WebFile tfile = _wsite.getSandbox().getFile(path);
-    if(tfile==null && doCreate) tfile = _wsite.getSandbox().createFile(path, false);
+    String path = "/" + aName + TableDataFileExt;
+    WebFile tfile = _wsite.getFile(path);
+    if(tfile==null && doCreate) tfile = _wsite.createFile(path, false);
     return tfile;
 }
 
@@ -225,11 +247,11 @@ protected synchronized List <Row> getEntityRows(Entity anEntity)
     // Create and set entity rows list
     _entityRows.put(anEntity, entityRows = Collections.synchronizedList(new ArrayList()));
     
-    // Get entity file
-    WebFile entityFile = getTableDataFile(anEntity.getName(), false);
+    // Get data file
+    WebFile dataFile = getTableDataFile(anEntity.getName(), false);
     
     // If file exists, read rows
-    if(entityFile!=null) {
+    if(dataFile!=null) {
         
         // Create CSVReader
         CSVReader csvReader = new CSVReader();
@@ -238,13 +260,14 @@ protected synchronized List <Row> getEntityRows(Entity anEntity)
         csvReader.setHasQuotedFields(true);
         
         // Read maps
-        List <Map> maps = csvReader.readObject(entityFile.getBytes(), anEntity.getName(), false);
+        List <Map> maps = csvReader.readObject(dataFile.getBytes(), anEntity.getName(), false);
         
         // Create rows for maps and add to entityRows list
-        Property primaryProperty = anEntity.getPrimary();
+        Property primeProp = anEntity.getPrimary(); int np = 0;
         for(Map map : maps) {
-            Object pvalue = primaryProperty.convertValue(map.get(primaryProperty.getName()));
-            Row row = createRow(anEntity, pvalue, map);
+            Object pv = map.get(primeProp.getName()); if(pv==null) map.put(primeProp.getName(), String.valueOf(np++));
+            Object pval = primeProp.convertValue(map.get(primeProp.getName()));
+            Row row = createRow(anEntity, pval, map);
             entityRows.add(row);
         }
     }

@@ -201,6 +201,9 @@ protected void initUI()
     
     // Register for WelcomePanel on close
     enableEvents(getWindow(), WinClose);
+    
+    // Remove StatusBar
+    getView("StatusBar").getHost().removeGuest(getView("StatusBar"));
 }
 
 }
