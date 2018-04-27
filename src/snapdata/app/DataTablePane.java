@@ -3,6 +3,7 @@ import java.util.List;
 import snap.gfx.Font;
 import snap.gfx.HPos;
 import snap.view.*;
+import snap.viewx.DialogBox;
 import snap.viewx.WebPage;
 import snap.web.WebFile;
 import snapdata.data.*;
@@ -20,6 +21,9 @@ public class DataTablePane extends WebPage {
     
     // The top level table showing records
     TableView <Row>        _rowsTable;
+    
+    // The first textfield in entity UI
+    TextField              _firstFocus;
     
     // The selected row
     Row                    _selRow;
@@ -98,6 +102,33 @@ public void setSelIndex(int anIndex)
 }
 
 /**
+ * Adds a row.
+ */
+public void addRow()
+{
+    Row row = getDataTableView().createRow();
+    try { row.save(); }
+    catch(Exception e)  { showErrorDialog(getUI(), "DataPage AddRecord Failed: " + e); return; }
+    
+    setSelRow(row);
+}
+
+/**
+ * Removes a row.
+ */
+public void removeRow()
+{
+    // Remove selected row and delete
+    Row row = getSelRow(); if(row==null) { beep(); return; }
+    try { row.delete(); }
+    catch(Exception e) { showErrorDialog(getUI(), "DataPage RemoveRecord Failed: " + e); return; }
+    
+    // Select next row
+    int ind = getSelIndex(); if(ind>=getRowCount()) ind = getRowCount() - 1;
+    setSelIndex(ind);
+}
+
+/**
  * Opens the given source.
  */
 public DataTablePane open(Object aSource)  { return this; }
@@ -157,6 +188,19 @@ protected void respondUI(ViewEvent anEvent)
     if(anEvent.equals(_rowsTable))
         setSelRow(_rowsTable.getSelItem());
         
+    // Handle AddRowButton
+    if(anEvent.equals("AddRowButton")) {
+        addRow();
+        requestFocus(_firstFocus);
+    }
+    
+    // Handle RemoveRowButton
+    if(anEvent.equals("RemoveRowButton")) {
+        String msg = "Are you sure you want to remove record(s)?";
+        if(DialogBox.showConfirmDialog(getUI(), "Remove Rows", msg))
+            removeRow();
+    }
+    
     // Handle RowBackButton, RowBackAllButton, RowNextButton, RowNextAllButton, RowText
     if(anEvent.equals("RowBackButton")) setSelIndex(getSelIndex()-1);
     if(anEvent.equals("RowBackAllButton")) setSelIndex(0);
@@ -214,6 +258,9 @@ private View createUIForEntity(Entity anEntity, String aKey)
             default: control = new TextField();
         }
         
+        // Set First focus
+        if(_firstFocus==null && control instanceof TextField) _firstFocus = (TextField)control;
+        
         // Configure and add to UI
         control.setGrowWidth(true); //control.resizeRelocate(180, 25 + pane.getChildren().size()/2*25, 144, 22);
         rowView.addChild(control);
@@ -260,7 +307,10 @@ private View createUIForRelation(Property aRel, String aKey)
     // Return view
     return relView;
 }
-    
+
+/** Show Error Dialog. */
+void showErrorDialog(View aView, String aMsg)  { DialogBox.showErrorDialog(aView, "Data Error", aMsg); }
+
 /**
  * Creates a new file for use with showNewFilePanel method.
  */

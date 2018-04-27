@@ -578,7 +578,11 @@ private void handleBookmarkEvent(ViewEvent anEvent)
 private class FileTreeResolver extends TreeResolver <WebFile> {
     
     /** Returns the parent of given item. */
-    public WebFile getParent(WebFile anItem)  { return anItem.getParent(); }
+    public WebFile getParent(WebFile anItem)
+    {
+        WebFile par = anItem.getParent(); if(par.isRoot()) return null;
+        return par;
+    }
 
     /** Whether given object is a parent (has children). */
     public boolean isParent(WebFile anItem)  { return anItem.isDir(); }
@@ -588,6 +592,9 @@ private class FileTreeResolver extends TreeResolver <WebFile> {
 
     /** Returns the text to be used for given item. */
     public String getText(WebFile anItem)  { return anItem.getName(); }
+
+    /** Return the image to be used for given item. */
+    public View getGraphic(WebFile anItem)  { return new ImageView(ViewUtils.getFileIconImage(anItem)); }
 }
 
 }

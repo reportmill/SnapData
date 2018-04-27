@@ -109,8 +109,8 @@ public void show()
 {
     // Set AppPane as OpenSite and show window
     getUI();
-    //getWindow().setSaveName("AppPane");
-    //getWindow().setSaveSize(true);
+    getWindow().setSaveName("SDAppPane");
+    getWindow().setSaveSize(true);
     getWindow().setVisible(true);
     
     // Open site and show home page

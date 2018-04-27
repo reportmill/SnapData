@@ -87,6 +87,15 @@ public synchronized List <Row> getRows()  { return _rows!=null? _rows : (_rows =
 protected List <Row> getRowsImpl()  { return getSite().getRows(getQuery()); }
 
 /**
+ * Creates a new row.
+ */
+public Row createRow()
+{
+    Row row = getSite().createRow(getTableEntity(), null);
+    return row;
+}
+
+/**
  * Adds a row.
  */
 protected void addRow(Row aRow)  { _rows.add(aRow); }

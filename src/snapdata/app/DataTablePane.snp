@@ -15,8 +15,8 @@
     </TabView>
   </SplitView>
   <RowView Padding="4" GrowWidth="true" Spacing="4">
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" text="+" />
-    <Button PrefWidth="22" PrefHeight="22" Padding="2" text="-" />
+    <Button Name="AddRowButton" PrefWidth="22" PrefHeight="22" Padding="2" text="+" />
+    <Button Name="RemoveRowButton" PrefWidth="22" PrefHeight="22" Padding="2" text="-" />
     <Button Name="RowBackAllButton" PrefWidth="22" PrefHeight="20" Padding="2" LeanX="CENTER" text="&lt;&lt;" />
     <Button Name="RowBackButton" PrefWidth="22" PrefHeight="20" Padding="2" text="&lt;" />
     <TextField Name="RowText" PrefWidth="80" PrefHeight="20" Align="CENTER" ColCount="12" />
