@@ -13,12 +13,12 @@ public class Fetch {
     // The name of this view
     String             _name;
 
-    // The data table
-    DataTable          _table;
-    
     // The query
     Query              _query;
 
+    // The data table
+    DataTable          _table;
+    
     // The data rows
     List <Row>         _rows;
     
@@ -93,15 +93,6 @@ public synchronized List <Row> getRows()  { return _rows!=null? _rows : (_rows =
  * Returns the list of rows for this table view.
  */
 protected List <Row> getRowsImpl()  { return getSite().getRows(getQuery()); }
-
-/**
- * Creates a new row.
- */
-public Row createRow()
-{
-    Row row = getSite().createRow(getTableEntity(), null);
-    return row;
-}
 
 /**
  * Adds a row.

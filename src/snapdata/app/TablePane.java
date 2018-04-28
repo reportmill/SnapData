@@ -49,7 +49,7 @@ public Entity getEntity()  { return getDataTable().getEntity(); }
 public DataTable getDataTable()
 {
     String ename = getTableName();
-    return getDataSite().getDataTable(ename);
+    return getDataSite().getTable(ename);
 }
 
 /**
@@ -99,8 +99,9 @@ public void addRow()
 {
     Row row = getDataTable().createRow();
     try { row.save(); }
-    catch(Exception e)  { showErrorDialog(getUI(), "DataPage AddRecord Failed: " + e); return; }
+    catch(Exception e)  { showErrorDialog(getUI(), "Add Row Failed: " + e); return; }
     
+    rowsDidChange();
     setSelRow(row);
 }
 
@@ -112,7 +113,9 @@ public void removeRow()
     // Remove selected row and delete
     Row row = getSelRow(); if(row==null) { beep(); return; }
     try { row.delete(); }
-    catch(Exception e) { showErrorDialog(getUI(), "DataPage RemoveRecord Failed: " + e); return; }
+    catch(Exception e) { showErrorDialog(getUI(), "Remove Row Failed: " + e); return; }
+    
+    rowsDidChange();
     
     // Select next row
     int ind = getSelIndex(); if(ind>=getRowCount()) ind = getRowCount() - 1;
@@ -127,8 +130,7 @@ protected void initUI()
     // Get RowsTable and add columns
     _rowsTable = getView("RowsTable", TableView.class);
     _rowsTable.setShowHeader(true);
-    resetRowsTableCols();
-    _rowsTable.setItems(getRows());
+    rowsDidChange();
     
     // Get TabView
     TabView tabView = getView("TabView", TabView.class);
@@ -199,9 +201,18 @@ protected void respondUI(ViewEvent anEvent)
 }
 
 /**
+ * Called when list of rows has changed.
+ */
+void rowsDidChange()
+{
+    _rowsTable.setItems(getRows());
+    rowValuesChanged();
+}
+
+/**
  * Reset RowsTable columns.
  */
-void resetRowsTableCols()
+void rowValuesChanged()
 {
     Entity entity = getEntity();
     for(Property prop : entity.getProperties()) {

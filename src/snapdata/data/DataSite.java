@@ -21,7 +21,7 @@ public class DataSite extends SnapObject {
     Map <String, Entity>      _entities = new HashMap();
     
     // The DataTables
-    Map <String,DataTable>    _dataTables = new HashMap();
+    Map <String,DataTable>    _tables = new HashMap();
     
     // PropChangeListener for Row changes
     PropChangeListener        _rowLsnr = pc -> rowDidPropChange(pc);
@@ -158,35 +158,35 @@ protected void deleteEntityImpl(Entity anEntity) throws Exception
 /**
  * Returns the list of known data tables.
  */
-public synchronized List <DataTable> getDataTables()  { return new ArrayList(_dataTables.values()); }
+public synchronized List <DataTable> getTables()  { return new ArrayList(_tables.values()); }
 
 /**
  * Returns the DataTable for given name
  */
-public synchronized DataTable getDataTable(String aName)
+public synchronized DataTable getTable(String aName)
 {
-    DataTable dtable = _dataTables.get(aName);
-    if(dtable==null) {
-        dtable = createDataTable(aName); if(dtable==null) return null;
-        _dataTables.put(aName, dtable);
+    DataTable table = _tables.get(aName);
+    if(table==null) {
+        table = createTable(aName); if(table==null) return null;
+        _tables.put(aName, table);
     }
-    return dtable;
+    return table;
 }
 
 /**
- * Returns the DataTable for given name.
+ * Creates a DataTable for given entity name.
  */
-protected DataTable createDataTable(String aName)
+protected DataTable createTable(String aName)
 {
     Entity entity = getEntity(aName); if(entity==null) return null;
-    DataTable table = createDataTableImpl(); table.setSite(this); table.setEntity(entity);
+    DataTable table = createTableImpl(); table.setSite(this); table.setEntity(entity);
     return table;
 }
 
 /**
  * Creates an instance of DataTable.
  */
-protected DataTable createDataTableImpl()  { return new DataTable(); }
+protected DataTable createTableImpl()  { return new DataTable(); }
 
 /**
  * Returns a row for an entity and primary value that is guaranteed to be unique for this data source.
@@ -201,11 +201,11 @@ public synchronized Row createRow(Entity anEntity, Object aPrimaryValue, Map aMa
     // If PrimaryValue provided, check/set LocalRows cache
     Row row = null;
     if(aPrimaryValue!=null) {
-        DataTable dtable = getDataTable(anEntity.getName());
-        row = dtable.getLocalRow(aPrimaryValue); if(row!=null) return row;
+        DataTable table = getTable(anEntity.getName());
+        row = table.getLocalRow(aPrimaryValue); if(row!=null) return row;
         row = createRowImpl(anEntity, aPrimaryValue); row.setSite(this); row.setEntity(anEntity);
         row.put(anEntity.getPrimary(), aPrimaryValue);
-        dtable.addLocalRow(row);
+        table.addLocalRow(row);
     }
     
     // Otherwise just create row
@@ -231,7 +231,7 @@ public synchronized Row getRow(Entity anEntity, Object aPrimaryValue)
     assert(aPrimaryValue!=null);
     
     // See if there is a local row - if so return it
-    DataTable dtable = getDataTable(anEntity.getName());
+    DataTable dtable = getTable(anEntity.getName());
     Row row = dtable.getLocalRow(aPrimaryValue);
     if(row!=null && row.getExists())
         return row;
@@ -304,7 +304,7 @@ public synchronized void saveRow(Row aRow) throws Exception
     aRow.setExists(true);
     aRow.setModified(false);
     if(!exists) {
-        DataTable dtable = getDataTable(aRow.getEntity().getName());
+        DataTable dtable = getTable(aRow.getEntity().getName());
         dtable.addLocalRow(aRow);
     }
 }
@@ -324,7 +324,7 @@ public synchronized void deleteRow(Row aRow) throws Exception
     
     // Set Exists to false and remove from table
     aRow.setExists(false);
-    DataTable dtable = getDataTable(aRow.getEntity().getName());
+    DataTable dtable = getTable(aRow.getEntity().getName());
     dtable.removeLocalRow(aRow);    
 }
 

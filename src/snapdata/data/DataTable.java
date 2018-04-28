@@ -6,7 +6,7 @@ import java.util.*;
 import snap.util.SnapObject;
 
 /**
- * A class to front for a table of data.
+ * This class represents a table of all rows for an entity.
  */
 public class DataTable extends SnapObject {
 
