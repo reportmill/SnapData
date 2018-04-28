@@ -1,6 +1,5 @@
 package snapdata.app;
 import snap.view.*;
-import snap.viewx.WebBrowser;
 import snap.web.*;
 
 /**
@@ -30,7 +29,7 @@ public class AppPane extends ViewOwner {
     SplitView            _sideBarSplit;
     
     // The AppBroswer for displaying editors
-    WebBrowser           _browser;
+    AppBrowser           _browser;
     
     // The pane that the browser sits in
     SplitView            _browserBox;
@@ -85,7 +84,7 @@ public void setSelectedFile(WebFile aFile)
 /**
  * Returns the browser.
  */
-public WebBrowser getBrowser()  { return _browser; }
+public AppBrowser getBrowser()  { return _browser; }
 
 /**
  * Creates a new document.
@@ -172,7 +171,7 @@ protected View createUI()
 protected void initUI()
 {
     // Get AppBrowser
-    _browser = getView("Browser", WebBrowser.class);
+    _browser = getView("Browser", AppBrowser.class);
     //_browser.setAppPane(this);
     
     // Listen to Browser PropChanges, to update ActivityText, ProgressBar, Window.Title

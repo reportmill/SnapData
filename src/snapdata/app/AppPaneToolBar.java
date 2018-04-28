@@ -55,7 +55,7 @@ public AppPane getAppPane()  { return _appPane; }
 /**
  * Returns the AppPane AppBrowser.
  */
-public WebBrowser getAppBrowser()  { return null; }//getAppPane().getBrowser(); }
+public AppBrowser getAppBrowser()  { return getAppPane().getBrowser(); }
 
 /**
  * Returns the RootSite.

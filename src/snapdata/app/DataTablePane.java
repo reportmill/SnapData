@@ -207,6 +207,9 @@ protected void respondUI(ViewEvent anEvent)
     if(anEvent.equals("RowNextButton")) setSelIndex(getSelIndex()+1);
     if(anEvent.equals("RowNextAllButton")) setSelIndex(getRowCount()-1);
     if(anEvent.equals("RowText")) setSelIndex(anEvent.getIntValue()-1);
+    
+    // Handle any PropControl
+    if(anEvent.equals("PropControl")) _rowsTable.updateItems(getSelRow());
 }
 
 /**
@@ -260,6 +263,7 @@ private View createUIForEntity(Entity anEntity, String aKey)
         
         // Set First focus
         if(_firstFocus==null && control instanceof TextField) _firstFocus = (TextField)control;
+        control.setName("PropControl");
         
         // Configure and add to UI
         control.setGrowWidth(true); //control.resizeRelocate(180, 25 + pane.getChildren().size()/2*25, 144, 22);
