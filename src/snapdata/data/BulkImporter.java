@@ -90,19 +90,19 @@ public void createRowDeep(Map aMap, Row aRow)
         Object value = aMap.get(pname); if(value==null) continue;
         
         // If property isn't relation, just add
-        if(!property.isRelation() || property.getRelationEntity()==null)
+        if(!property.isRelation() || property.getRelEntity()==null)
             aRow.put(property, value);
         
         // If to-one, create row and add
         else if(value instanceof Map) { Map map = (Map)value;
-            value = createRow(property.getRelationEntity(), map);
+            value = createRow(property.getRelEntity(), map);
             aRow.put(property, value);
         }
         
         // If to-many, get list of rows for maps and add
         else if(value instanceof List) { List list = (List)value, list2 = new ArrayList();
             for(Object item : list) { Map map = (Map)item;
-                Row createdRow = createRow(property.getRelationEntity(), map);
+                Row createdRow = createRow(property.getRelEntity(), map);
                 list2.add(createdRow); }
             aRow.put(property, list2);
         }

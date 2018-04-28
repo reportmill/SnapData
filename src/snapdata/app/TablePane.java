@@ -274,7 +274,7 @@ private View createUIForEntity(Entity anEntity, String aKey)
 private View createUIForRelation(Property aRel, String aKey)
 {
     // If toOne
-    if(!aRel.isToMany()) return createUIForEntity(aRel.getRelationEntity(), aKey);
+    if(!aRel.isToMany()) return createUIForEntity(aRel.getRelEntity(), aKey);
 
     // Create RelView
     ColView relView = new ColView(); relView.setPadding(36,36,36,36); relView.setFont(Font.Arial12);
@@ -285,7 +285,7 @@ private View createUIForRelation(Property aRel, String aKey)
     relView.addChild(table);
     
     // Iterate over properties and add columns
-    Entity entity = aRel.getRelationEntity();
+    Entity entity = aRel.getRelEntity();
     List <Property> props = entity.getProperties();
     for(Property prop : props) {
         if(prop.isToMany()) continue;

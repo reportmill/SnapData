@@ -389,15 +389,15 @@ public void setToMany(boolean aValue)
  */
 public boolean isDerived()
 {
-    return isRelation() && getRelationLocalProperty()!=null && getRelationLocalProperty().isPrimary();
+    return isRelation() && getRelLocalProp()!=null && getRelLocalProp().isPrimary();
 }
 
 /**
  * Returns the relation entity.
  */
-public Entity getRelationEntity()
+public Entity getRelEntity()
 {
-    if(_relEntity==null) { Entity e = getEntity(); String name = getRelationEntityName();
+    if(_relEntity==null) { Entity e = getEntity(); String name = getRelEntityName();
         _relEntity = e!=null && name!=null? e.getEntity(name) : null; }
     return _relEntity;
 }
@@ -405,32 +405,32 @@ public Entity getRelationEntity()
 /**
  * Sets the relation entity.
  */
-public void setRelationEntity(Entity anEntity)
+public void setRelEntity(Entity anEntity)
 {
     _relEntity = anEntity;
-    if(_relEntity!=null) setRelationEntityName(_relEntity.getName());
+    if(_relEntity!=null) setRelEntityName(_relEntity.getName());
 }
 
 /**
  * Returns the name of the entity that this relation property points to. 
  */
-public String getRelationEntityName()  { return _relEntityName; }
+public String getRelEntityName()  { return _relEntityName; }
 
 /**
  * Sets the name of the entity that this relation property points to. 
  */
-public void setRelationEntityName(String aName)
+public void setRelEntityName(String aName)
 {
-    if(SnapUtils.equals(aName, getRelationEntityName())) return;
-    firePropChange("RelationEntityName", _relEntityName, _relEntityName = aName);
+    if(SnapUtils.equals(aName, getRelEntityName())) return;
+    firePropChange("RelEntityName", _relEntityName, _relEntityName = aName);
 }
 
 /**
  * Returns the property name local to this property's entity that the relation uses as a key (primary or foreign).
  */
-public String getRelationLocalPropertyName()
+public String getRelLocalPropName()
 {
-    if(_relLocalPropName==null && getType()==Type.Relation && getRelationEntityName()!=null)
+    if(_relLocalPropName==null && getType()==Type.Relation && getRelEntityName()!=null)
         _relLocalPropName = getName(); // Is it useful to guess this?
     return _relLocalPropName;
 }
@@ -438,47 +438,47 @@ public String getRelationLocalPropertyName()
 /**
  * Sets the property name local to this property's entity that the relation uses as a key (primary or foreign).
  */
-public void setRelationLocalPropertyName(String aName)
+public void setRelLocalPropName(String aName)
 {
-    if(SnapUtils.equals(aName, getRelationLocalPropertyName())) return;
-    firePropChange("RelationLocalPropertyName", _relLocalPropName, _relLocalPropName = aName);
+    if(SnapUtils.equals(aName, getRelLocalPropName())) return;
+    firePropChange("RelLocalPropName", _relLocalPropName, _relLocalPropName = aName);
 }
 
 /**
  * Returns the property name that the relation uses as a key in the remote table (primary or foreign).
  */
-public String getRelationRemotePropertyName()
+public String getRelRemotePropName()
 {
-    if(_relRemotePropName==null && getType()==Type.Relation && getRelationEntity()!=null &&
-        getRelationEntity().getPrimary()!=null)
-        _relRemotePropName = getRelationEntity().getPrimary().getName();
+    if(_relRemotePropName==null && getType()==Type.Relation && getRelEntity()!=null &&
+        getRelEntity().getPrimary()!=null)
+        _relRemotePropName = getRelEntity().getPrimary().getName();
     return _relRemotePropName;
 }
 
 /**
  * Sets the property name that the relation uses as a key in the remote table (primary or foreign).
  */
-public void setRelationRemotePropertyName(String aName)
+public void setRelRemotePropName(String aName)
 {
-    if(SnapUtils.equals(aName, getRelationRemotePropertyName())) return;
-    firePropChange("RelationRemotePropertyName", _relRemotePropName, _relRemotePropName = aName);
+    if(SnapUtils.equals(aName, getRelRemotePropName())) return;
+    firePropChange("RelRemotePropName", _relRemotePropName, _relRemotePropName = aName);
 }
 
 /**
  * Returns the relation local property.
  */
-public Property getRelationLocalProperty()
+public Property getRelLocalProp()
 {
-    return getEntity()!=null? getEntity().getProperty(getRelationLocalPropertyName()) : null;
+    return getEntity()!=null? getEntity().getProperty(getRelLocalPropName()) : null;
 }
 
 /**
  * Returns the relation remote property.
  */
-public Property getRelationRemoteProperty()
+public Property getRelRemoteProp()
 {
-    Entity entity = getRelationEntity();
-    return entity!=null? entity.getProperty(getRelationRemotePropertyName()) : null;
+    Entity entity = getRelEntity();
+    return entity!=null? entity.getProperty(getRelRemotePropName()) : null;
 }
 
 /**
@@ -496,7 +496,7 @@ public Object convertValue(Object anObj)
     
     // If value is a relation mapping that is still primary type, try to convert to remote property type
     if(isRelation() && !isDerived() && value!=null && !(value instanceof Row)) {
-        Property remoteProperty = getRelationRemoteProperty();
+        Property remoteProperty = getRelRemoteProp();
         if(remoteProperty!=null)
             value = remoteProperty.convertValue(value);
     }
@@ -506,11 +506,11 @@ public Object convertValue(Object anObj)
 }
 
 /**
- * RMKey.Get implementation to return Property for key from RelationEntity (if found).
+ * RMKey.Get implementation to return Property for key from RelEntity (if found).
  */
 public Object getKeyValue(String aKey)
 {
-    Entity re = getRelationEntity(); Property p = re!=null? re.getProperty(aKey) : null;
+    Entity re = getRelEntity(); Property p = re!=null? re.getProperty(aKey) : null;
     return p!=null? p : Key.getValueImpl(this, aKey);
 }
 
@@ -562,7 +562,7 @@ public boolean equals(Object anObj)
     // Check EnumValues
     if(!SnapUtils.equals(other._enumValues, _enumValues)) return false;
     
-    // Check RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    // Check RelEntityName, RelLocalPropName, RelRemotePropName
     if(!SnapUtils.equals(other._relEntityName, _relEntityName)) return false;
     if(!SnapUtils.equals(other._relLocalPropName, _relLocalPropName)) return false;
     if(!SnapUtils.equals(other._relRemotePropName, _relRemotePropName)) return false;
@@ -623,14 +623,14 @@ public XMLElement toXML(XMLArchiver anArchiver)
     // Archive EnumValues
     if(getType()==Type.Enum && getEnumStrings()!=null) e.add("enum-values", getEnumsString());
     
-    // Archive ToMany, RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    // Archive ToMany, RelEntityName, RelLocalPropName, RelRemotePropName
     if(isToMany()) e.add("ToMany", true);
-    if(getRelationEntityName()!=null && getRelationEntityName().length()>0)
-        e.add("RelationEntityName", getRelationEntityName());
-    if(getRelationLocalPropertyName()!=null && getRelationLocalPropertyName().length()>0)
-        e.add("RelationLocalPropertyName", getRelationLocalPropertyName());
-    if(getRelationRemotePropertyName()!=null && getRelationRemotePropertyName().length()>0)
-        e.add("RelationRemotePropertyName", getRelationRemotePropertyName());
+    if(getRelEntityName()!=null && getRelEntityName().length()>0)
+        e.add("RelEntityName", getRelEntityName());
+    if(getRelLocalPropName()!=null && getRelLocalPropName().length()>0)
+        e.add("RelLocalPropName", getRelLocalPropName());
+    if(getRelRemotePropName()!=null && getRelRemotePropName().length()>0)
+        e.add("RelRemotePropName", getRelRemotePropName());
     
     // Return element
     return e;
@@ -666,19 +666,19 @@ public Property fromXML(XMLArchiver anArchiver, XMLElement anElement)
     // Unarchive EnumValues
     if(anElement.hasAttribute("enum-values")) setEnumsString(anElement.getAttributeValue("enum-values"));
     
-    // Unarchive ToMany, RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    // Unarchive ToMany, RelEntityName, RelLocalPropName, RelRemotePropName
     if(anElement.hasAttribute("ToMany")) setToMany(anElement.getAttributeBoolValue("ToMany"));
-    if(anElement.hasAttribute("RelationEntityName"))
-        setRelationEntityName(anElement.getAttributeValue("RelationEntityName"));
-    if(anElement.hasAttribute("RelationLocalPropertyName"))
-        setRelationLocalPropertyName(anElement.getAttributeValue("RelationLocalPropertyName"));
-    if(anElement.hasAttribute("RelationRemotePropertyName"))
-        setRelationRemotePropertyName(anElement.getAttributeValue("RelationRemotePropertyName"));
+    if(anElement.hasAttribute("RelEntityName"))
+        setRelEntityName(anElement.getAttributeValue("RelEntityName"));
+    if(anElement.hasAttribute("RelLocalPropName"))
+        setRelLocalPropName(anElement.getAttributeValue("RelLocalPropName"));
+    if(anElement.hasAttribute("RelRemotePropName"))
+        setRelRemotePropName(anElement.getAttributeValue("RelRemotePropName"));
     
     // Unarchive legacy relation values
-    if(anElement.hasAttribute("subtype")) setRelationEntityName(anElement.getAttributeValue("subtype"));
+    if(anElement.hasAttribute("subtype")) setRelEntityName(anElement.getAttributeValue("subtype"));
     else if(anElement.hasAttribute("relation-entity-name"))
-        setRelationEntityName(anElement.getAttributeValue("relation-entity-name"));
+        setRelEntityName(anElement.getAttributeValue("relation-entity-name"));
     
     // Return this property
     return this;
@@ -691,7 +691,7 @@ public List <String> getJSONKeys()
 {
     return Arrays.asList("Name", "Type", "Primary", "Private", "StringSize", "NumberType", "DateType",
             "AutoGenerated", "Nullable", "DefaultValue", "EnumStrings",
-            "RelationEntityName", "RelationLocalPropertyName", "RelationRemotePropertyName");
+            "RelEntityName", "RelLocalPropName", "RelRemotePropName");
 }
 
 /**

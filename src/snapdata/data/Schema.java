@@ -168,7 +168,7 @@ protected Entity createRootEntity()
     // Iterate over entities
     for(Entity entity : getEntities()) {
         Property prop = new Property(entity.getName(), Property.Type.Relation); prop.setToMany(true);
-        prop.setRelationEntity(entity);
+        prop.setRelEntity(entity);
         rootEntity.addProperty(prop);
     }
 

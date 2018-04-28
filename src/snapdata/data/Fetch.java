@@ -27,7 +27,7 @@ public class Fetch {
  */
 public Fetch(Query aQuery, DataTable aTable, String aName)
 {
-    _query = aQuery; _table = aTable; _name = aName;
+    _query = aQuery; setTable(aTable); _name = aName;
 }
     
 /**

@@ -329,7 +329,7 @@ public Property getKeyPathProperty(String aKeyPath)
 {
     String pnames[] = aKeyPath!=null? aKeyPath.split("\\.") : new String[0]; Property prop = null;
     for(String pname : pnames) {
-        Entity entity = prop!=null? prop.getRelationEntity() : this; if(entity==null) return null;
+        Entity entity = prop!=null? prop.getRelEntity() : this; if(entity==null) return null;
         prop = entity.getProperty(pname); if(prop==null) break; }
     return prop;
 }
