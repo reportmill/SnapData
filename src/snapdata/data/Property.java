@@ -47,6 +47,9 @@ public class Property extends SnapObject implements Comparable, JSONArchiver.Get
     // The enum values (for type Enum).
     List <String>  _enumValues;
     
+    // Whether property is to-many relation (for type Relation)
+    boolean        _toMany;
+    
     // The entity that describes the relation object(s)
     Entity         _relEntity;
     
@@ -60,7 +63,7 @@ public class Property extends SnapObject implements Comparable, JSONArchiver.Get
     String         _relRemotePropName;
     
     // Constants for property types
-    public enum Type { String, Number, Date, Boolean, Enum, Binary, Relation, RelationList, Other }
+    public enum Type { String, Number, Date, Boolean, Enum, Binary, Relation, Other }
     
     // Constants for string sizes
     public enum StringSize {
@@ -155,9 +158,8 @@ public void setTypeName(String aName)
     String type = StringUtils.firstCharUpperCase(aName);
     
     // Do some legacy conversions
-    if(type.equals("Map")) type = Type.Relation.toString();
+    if(type.equals("Map") || type.equals("List")) type = Type.Relation.toString();
     else if(type.equals("DateTime")) type = Type.Date.toString();
-    else if(type.equals("List")) type = Type.RelationList.toString();
     else if(type.equals("Decimal")) type = Type.Number.toString();
     else if(type.equals("Base64Binary")) type = Type.Binary.toString();
     
@@ -358,17 +360,27 @@ public void setEnumsString(String aValue)
 /**
  * Returns whether this property is a simple attribute.
  */
-public boolean isAttribute()  { return getType()!=Type.Relation && getType()!=Type.RelationList; }
+public boolean isAttribute()  { return getType()!=Type.Relation; }
 
 /**
  * Returns whether this property is a relation.
  */
-public boolean isRelation()  { return getType()==Type.Relation || getType()==Type.RelationList; }
+public boolean isRelation()  { return getType()==Type.Relation; }
 
 /**
  * Returns whether this property is a to many relation.
  */
-public boolean isToMany()  { return getType()==Type.RelationList; }
+public boolean isToMany()  { return _toMany; }
+
+/**
+ * Sets whether this property is a to many relation.
+ */
+public void setToMany(boolean aValue)
+{
+    setType(Type.Relation); _toMany = aValue;
+    if(aValue==isToMany()) return;
+    firePropChange("ToMany", _toMany, _toMany = aValue);
+}
 
 /**
  * Returns whether property value is derived from other properties and doesn't require persistence.
@@ -379,11 +391,6 @@ public boolean isDerived()
 {
     return isRelation() && getRelationLocalProperty()!=null && getRelationLocalProperty().isPrimary();
 }
-
-/**
- * Sets whether this property is a to many relation.
- */
-public void setToMany(boolean aValue)  { setType(aValue? Type.RelationList : Type.Relation); }
 
 /**
  * Returns the relation entity.
@@ -616,7 +623,8 @@ public XMLElement toXML(XMLArchiver anArchiver)
     // Archive EnumValues
     if(getType()==Type.Enum && getEnumStrings()!=null) e.add("enum-values", getEnumsString());
     
-    // Archive RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    // Archive ToMany, RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    if(isToMany()) e.add("ToMany", true);
     if(getRelationEntityName()!=null && getRelationEntityName().length()>0)
         e.add("RelationEntityName", getRelationEntityName());
     if(getRelationLocalPropertyName()!=null && getRelationLocalPropertyName().length()>0)
@@ -658,7 +666,8 @@ public Property fromXML(XMLArchiver anArchiver, XMLElement anElement)
     // Unarchive EnumValues
     if(anElement.hasAttribute("enum-values")) setEnumsString(anElement.getAttributeValue("enum-values"));
     
-    // Unarchive RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    // Unarchive ToMany, RelationEntityName, RelationLocalPropertyName, RelationRemotePropertyName
+    if(anElement.hasAttribute("ToMany")) setToMany(anElement.getAttributeBoolValue("ToMany"));
     if(anElement.hasAttribute("RelationEntityName"))
         setRelationEntityName(anElement.getAttributeValue("RelationEntityName"));
     if(anElement.hasAttribute("RelationLocalPropertyName"))

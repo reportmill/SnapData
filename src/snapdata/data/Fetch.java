@@ -6,9 +6,9 @@ import java.util.*;
 import snap.util.*;
 
 /**
- * This class represents a fetch of a set of data table rows for a given query.
+ * This class represents a subset of table rows for a Query and a DataTable.
  */
-public class DataTableView {
+public class Fetch {
 
     // The name of this view
     String             _name;
@@ -21,6 +21,14 @@ public class DataTableView {
 
     // The data rows
     List <Row>         _rows;
+    
+/**
+ * Creates a Fetch for given Query, table and name.
+ */
+public Fetch(Query aQuery, DataTable aTable, String aName)
+{
+    _query = aQuery; _table = aTable; _name = aName;
+}
     
 /**
  * Returns the data site.
@@ -135,41 +143,6 @@ protected void tableDidPropChange(PropChange anEvent)
                 removeRow(orow);
         }
     }
-}
-
-/**
- * Returns a map of TableViews for given Table.
- */
-private static Map <String,DataTableView> getTableViewsMap(DataTable aTable)
-{
-    Map tviews = (Map)aTable.getProp("TableViews");
-    if(tviews==null) aTable.setProp("TableViews", tviews=new HashMap());
-    return tviews;
-}
-
-/**
- * Returns the known table views.
- */
-public static List <? extends DataTableView> getTableViews(DataTable aTable)
-{
-    return new ArrayList(getTableViewsMap(aTable).values());
-}
-
-/**
- * Returns a named table view.
- */
-public static DataTableView getTableView(DataTable aTable, String aName)  { return getTableView(aTable, aName, false); }
-
-/**
- * Returns a named table view.
- */
-public static synchronized DataTableView getTableView(DataTable aTable, String aName, boolean doCreate)
-{
-    Map <String,DataTableView> tviews = getTableViewsMap(aTable);
-    DataTableView tview = tviews.get(aName);
-    if(tview==null && doCreate) {
-        tview = new DataTableView(); tview.setTable(aTable); tview.setName(aName); tviews.put(aName, tview); }
-    return tview;
 }
 
 }

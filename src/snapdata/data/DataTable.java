@@ -11,19 +11,16 @@ import snap.util.SnapObject;
 public class DataTable extends SnapObject {
 
     // The data source
-    DataSite                      _site;
+    DataSite                     _site;
     
     // The entity
     Entity                       _entity;
     
-    // The default table view
-    DataTableView                _tview;
-    
     // The rows that have been loaded locally
     Map <Object,Row>             _localRows = new HashMap();
     
-    // A map of properties associated with file
-    Map                          _props = new HashMap();
+    // The primary fetch that holds all rows
+    Fetch                        _mfetch;
     
     // Constants for property changes
     static final String LocalRow_Prop = "LocalRow";
@@ -54,14 +51,24 @@ public Entity getEntity()  { return _entity; }
 protected void setEntity(Entity anEntity)  { _entity = anEntity; }
 
 /**
- * Returns a file property for key.
+ * Returns the primary fetch that returns all rows.
  */
-public Object getProp(String aKey)  { return _props.get(aKey); }
+public Fetch getMasterFetch()
+{
+    if(_mfetch!=null) return _mfetch;
+    _mfetch = new Fetch(null, this, "AllRows");
+    return _mfetch;
+}
 
 /**
- * Sets a property for a key.
+ * Returns all table rows.
  */
-public void setProp(String aKey, Object aValue)  { _props.put(aKey, aValue); }
+public List <Row> getRows()  { return getMasterFetch().getRows(); }
+
+/**
+ * Creates a new row.
+ */
+public Row createRow()  { return getSite().createRow(getEntity(), null); }
 
 /**
  * Returns a local row for a primary value.

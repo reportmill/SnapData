@@ -53,7 +53,7 @@ protected Class <? extends WebPage> getPageClass(WebResponse aResp)
     
     //if(type.equals("rpt")) return getPageClass("com.reportmill.app.ReportPageEditor", TextPage.class);
     //if(type.equals("snp")) return snapbuild.app.EditorPage.class;
-    if(type.equals("table")) return DataTablePane.class;
+    if(type.equals("table")) return TablePane.class;
     
     // Do normal version
     return super.getPageClass(aResp);

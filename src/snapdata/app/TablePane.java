@@ -9,9 +9,9 @@ import snap.web.WebFile;
 import snapdata.data.*;
 
 /**
- * A class to provide UI editing of a DataTable.
+ * A class to provide UI management of a DataTable.
  */
-public class DataTablePane extends WebPage {
+public class TablePane extends WebPage {
 
     // The table name
     String                 _tname;
@@ -53,18 +53,9 @@ public DataTable getDataTable()
 }
 
 /**
- * Returns the TableFile's default view.
- */
-public DataTableView getDataTableView()
-{
-    String ename = getTableName();
-    return DataTableView.getTableView(getDataTable(), "AllRows", true);
-}
-
-/**
  * Returns the list of rows for table.
  */
-public List <Row> getRows()  { return getDataTableView().getRows(); }
+public List <Row> getRows()  { return getDataTable().getRows(); }
 
 /**
  * Returns the row count.
@@ -106,7 +97,7 @@ public void setSelIndex(int anIndex)
  */
 public void addRow()
 {
-    Row row = getDataTableView().createRow();
+    Row row = getDataTable().createRow();
     try { row.save(); }
     catch(Exception e)  { showErrorDialog(getUI(), "DataPage AddRecord Failed: " + e); return; }
     
@@ -127,11 +118,6 @@ public void removeRow()
     int ind = getSelIndex(); if(ind>=getRowCount()) ind = getRowCount() - 1;
     setSelIndex(ind);
 }
-
-/**
- * Opens the given source.
- */
-public DataTablePane open(Object aSource)  { return this; }
 
 /**
  * Initialize UI.
