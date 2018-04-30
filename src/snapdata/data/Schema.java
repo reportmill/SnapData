@@ -19,9 +19,6 @@ public class Schema extends SnapObject implements JSONArchiver.GetKeys, XMLArchi
     // The list of entities
     List <Entity>    _entities = new ArrayList();
     
-    // The root entity - one that usually just contains relations for the other entities
-    Entity           _rootEntity;
-    
 /**
  * Creates a new empty schema.
  */
@@ -94,9 +91,9 @@ public void addEntity(Entity anEntity)
  */
 public void addEntity(Entity anEntity, int anIndex)
 {
-    // Add entity, set Entity.Schema and clear RootEntity
+    // Add entity, set Entity.Schema
     getEntities().add(anIndex, anEntity);
-    anEntity.setSchema(this); _rootEntity = null;
+    anEntity.setSchema(this);
 
     // Fire PropertyChange
     firePropChange("Entity", null, anEntity, anIndex);
@@ -107,9 +104,8 @@ public void addEntity(Entity anEntity, int anIndex)
  */
 public Entity removeEntity(int anIndex)
 {
-    // Remove entity and clear RootEntity
+    // Remove entity
     Entity entity = getEntities().remove(anIndex);
-    _rootEntity = null;
     
     // Fire PropertyChange and return
     firePropChange("Entity", entity, null, anIndex);
@@ -138,42 +134,6 @@ public Entity getEntity(String aName)
     
     // Try to load from WebSite or return null
     return getSite()!=null? getSite().getEntity(aName) : null;
-}
-
-/**
- * Returns the root entity.
- */
-public Entity getRootEntity()
-{
-    // If root entity not present, see if schema has root entity otherwise create it
-    if(_rootEntity==null) {
-        _rootEntity = getEntity(getName());
-        if(_rootEntity==null)
-            _rootEntity = createRootEntity();
-    }
-    
-    // Return root entity
-    return _rootEntity;
-}
-
-/**
- * Creates a root entity.
- */
-protected Entity createRootEntity()
-{
-    // Create new entity with schema name
-    Entity rootEntity = new Entity(); rootEntity.setName(getName()!=null? getName() : "RootEntity");
-    rootEntity.setSchema(this);
-    
-    // Iterate over entities
-    for(Entity entity : getEntities()) {
-        Property prop = new Property(entity.getName(), Property.Type.Relation); prop.setToMany(true);
-        prop.setRelEntity(entity);
-        rootEntity.addProperty(prop);
-    }
-
-    // Return root entity
-    return rootEntity;
 }
 
 /**

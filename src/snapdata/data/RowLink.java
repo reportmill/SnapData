@@ -84,7 +84,7 @@ public Object getRemoteValue()  { return _remoteValue!=null? _remoteValue : (_re
 private Object getRemoteValueImpl()
 {
     if(_remoteRow==null) return null;
-    return _remoteRow.get(getRelation().getRelRemoteProp());
+    return _remoteRow.get(getRelation().getJoin().getRemoteProp());
 }
 
 /**
@@ -138,7 +138,7 @@ public List <Row> getRemoteRows()  { return _remoteRows!=null? _remoteRows : (_r
 private List <Row> getRemoteRowsImpl()
 {
     Query query = new Query(getRelation().getRelEntity());
-    String remotePropertyName = getRelation().getRelRemotePropName();
+    String remotePropertyName = getRelation().getJoin().getRemotePropName();
     query.addCondition(remotePropertyName, Condition.Operator.Equals, getRow().getPrimaryValue());
     List <Row> rows = getSite().getRows(query);
     return rows;

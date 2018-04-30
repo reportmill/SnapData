@@ -215,6 +215,7 @@ void rowsDidChange()
 void rowValuesChanged()
 {
     Entity entity = getEntity();
+    while(_rowsTable.getColCount()>0) _rowsTable.removeCol(0);
     for(Property prop : entity.getProperties()) {
         TableCol col = new TableCol(); col.setName(prop.getName()); //col.setPrefWidth(120);
         col.setHeaderText(prop.getName()); col.setItemKey(prop.getName());
