@@ -4,7 +4,6 @@
 package snapdata.data;
 import java.util.*;
 import snap.util.*;
-import snap.web.WebFile;
 
 /**
  * This class represents an entity for a data source. It has a list of properties, some of which are simple
@@ -18,23 +17,17 @@ public class Entity extends SnapObject implements JSONArchiver.GetKeys, XMLArchi
     // Entity name
     String             _name;
     
-    // Whether entity exists in data source
-    boolean            _exists;
-    
     // Entity properties
     List <Property>    _props = new ArrayList();
-    
-    // The class that this entity represents
-    Class              _class;
     
     // The key/key-chain to the property(s) that returns best string description of an entity instance
     String             _descKey;
     
+    // Whether entity exists in data source
+    boolean            _exists;
+    
     // Cached lists of properties that are attributes (simple properties), relations, primaries, etc.
     List <Property>    _attrs, _relations, _primaries, _attrsSorted, _relationsSorted;
-    
-    // The source file
-    WebFile            _source;
     
     // A Listener to catch child Property PropChanges
     PropChangeListener _propLsnr = pc -> propertyDidPropChange(pc);
@@ -124,32 +117,32 @@ public void setProperties(List <Property> theProps)
 /**
  * Adds a given property.
  */
-public void addProperty(Property aProperty)
+public void addProperty(Property aProp)
 {
-    Property duplicate = getProperty(aProperty.getName());
+    Property duplicate = getProperty(aProp.getName());
     int index = duplicate==null? getPropertyCount() : removeProperty(duplicate);
-    addProperty(aProperty, index);
+    addProperty(aProp, index);
 }
 
 /**
  * Adds a given property at given index.
  */
-public void addProperty(Property aProperty, int anIndex)
+public void addProperty(Property aProp, int anIndex)
 {
     // Add property to list
-    _props.add(anIndex, aProperty);
-    aProperty.setEntity(this);  // Set Property.Entity to this
-    aProperty.addPropChangeListener(_propLsnr);  // Start listening to PropertyChanges
+    _props.add(anIndex, aProp);
+    aProp.setEntity(this);  // Set Property.Entity to this
+    aProp.addPropChangeListener(_propLsnr);  // Start listening to PropertyChanges
     _attrs = _attrsSorted = _relations = _relationsSorted = _primaries = null;  // Reset cached lists
     
     // Fire property change event
-    firePropChange("Property", null, aProperty, anIndex);
+    firePropChange("Property", null, aProp, anIndex);
 }
 
 /**
  * Adds given properties.
  */
-public void addProperty(Property ... theProperties)  { for(Property p : theProperties) addProperty(p); }
+public void addProperty(Property ... theProps)  { for(Property p : theProps) addProperty(p); }
 
 /**
  * Removes a property at given index.
@@ -169,9 +162,9 @@ public Object removeProperty(int anIndex)
 /**
  * Removes the given property.
  */
-public int removeProperty(Property aProperty)
+public int removeProperty(Property aProp)
 {
-    int index = ListUtils.indexOfId(_props, aProperty);
+    int index = ListUtils.indexOfId(_props, aProp);
     if(index>=0) removeProperty(index);
     return index;
 }
@@ -206,16 +199,15 @@ public Property getAttribute(int anIndex)  { return getAttributes().get(anIndex)
 /**
  * Returns the list of attributes.
  */
-private List <Property> getAttributes()  { return _attrs!=null? _attrs : (_attrs=createAttributes()); }
-
-/**
- * Creates the list of attributes.
- */
-private List <Property> createAttributes()
+private List <Property> getAttributes()
 {
+    // If already set, just return
+    if(_attrs!=null) return _attrs;
+
+    // Create, set and return
     List <Property> attrs = new ArrayList();
     for(int i=0, iMax=getPropertyCount(); i<iMax; i++) if(getProperty(i).isAttribute()) attrs.add(getProperty(i));
-    return attrs;
+    return _attrs = attrs;
 }
 
 /**
@@ -243,16 +235,15 @@ public Property getRelation(int anIndex)  { return getRelations().get(anIndex); 
 /**
  * Returns the list of relations in the entity.
  */
-public List <Property> getRelations()  { return _relations!=null? _relations : (_relations=createRelations()); }
-
-/**
- * Creates the list of relations in the entity.
- */
-private List <Property> createRelations()
+public List <Property> getRelations()
 {
+    // If already set, just return
+    if(_relations!=null) return _relations;
+
+    // Create, set and return
     List <Property> rels = new ArrayList();
     for(Property property : getProperties()) if(property.isRelation()) rels.add(property);
-    return rels;
+    return _relations = rels;
 }
 
 /**
@@ -302,25 +293,14 @@ public Property getPrimary()  { List <Property> p = getPrimaries(); return p.siz
  */
 public List <Property> getPrimaries()
 {
-    // If primaries not loaded, load them
-    if(_primaries==null) {
-        _primaries = new ArrayList();
-        for(Property property : getProperties()) if(property.isPrimary()) _primaries.add(property);
-    }
-
-    // Return primaries list
-    return _primaries;
+    // If already set, just return
+    if(_primaries!=null) return _primaries;
+    
+    // Create, set and return
+    List <Property> primes = new ArrayList();
+    for(Property prop : getProperties()) if(prop.isPrimary()) primes.add(prop);
+    return _primaries = primes;
 }
-
-/**
- * Returns the class that this entity represents.
- */
-public Class getEntityClass()  { return _class; }
-
-/**
- * Sets the class that this entity represents.
- */
-public void setEntityClass(Class aClass)  { _class = aClass; }
 
 /**
  * Returns the property with the given name.
@@ -333,9 +313,6 @@ public Property getKeyPathProperty(String aKeyPath)
         prop = entity.getProperty(pname); if(prop==null) break; }
     return prop;
 }
-
-/** RMKey.Get implementation to return Property for key. */
-//public Object getKeyValue(String k){ Property p = getProperty(k); return p!=null? p : RMKey.getValueImpl(this, k);}
 
 /**
  * Returns the key/key-chain to the property(s) that returns best string description of an entity instance.
@@ -371,16 +348,6 @@ public String getDescriptorKeyGuess()
 protected void propertyDidPropChange(PropChange anEvent)  { firePropChange(anEvent); }
 
 /**
- * Returns the source file.
- */
-public WebFile getSourceFile()  { return _source; }
-
-/**
- * Sets the source file.
- */
-public void setSourceFile(WebFile aSource)  { _source = aSource; }
-
-/**
  * Standard equals method.
  */
 public boolean equals(Object anObj)
@@ -402,8 +369,7 @@ public Entity clone()
 {
     // Do normal version, reset property list and clone properties
     Entity clone = (Entity)super.clone();
-    clone._props = new ArrayList();
-    for(Property property : getProperties()) clone.addProperty(property.clone());
+    clone._props = new ArrayList(); for(Property prop : getProperties()) clone.addProperty(prop.clone());
     return clone;
 }
 

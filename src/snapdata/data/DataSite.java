@@ -46,15 +46,10 @@ public String getURLString()  { return _wsite.getURLString(); }
  */
 public synchronized Schema getSchema()
 {
-    if(_schema==null) {
-        _schema = createSchema(); _schema.setName(getName()); _schema.setSite(this); }
-    return _schema;
+    if(_schema!=null) return _schema;
+    Schema schema = new Schema(getName()); schema.setSite(this);
+    return _schema = schema;
 }
-
-/**
- * Creates the schema.
- */
-protected Schema createSchema()  { return new Schema(); }
 
 /**
  * Creates an entity for given name.
@@ -131,7 +126,7 @@ public void saveEntity(Entity anEntity) throws Exception
  */
 protected void saveEntityImpl(Entity anEntity) throws Exception
 {
-    WebFile efile = anEntity.getSourceFile(); if(efile==null) return;
+    WebFile efile = getEntitySourceFile(anEntity); if(efile==null) return;
     efile.setBytes(anEntity.toBytes());
     efile.save();
 }
@@ -151,8 +146,17 @@ public void deleteEntity(Entity anEntity) throws Exception
  */
 protected void deleteEntityImpl(Entity anEntity) throws Exception
 {
-    WebFile efile = anEntity.getSourceFile(); if(efile==null) return;
+    WebFile efile = getEntitySourceFile(anEntity); if(efile==null) return;
     efile.delete();
+}
+
+/**
+ * Returns the entity source file.
+ */
+protected WebFile getEntitySourceFile(Entity anEntity)
+{
+    String name = anEntity.getName();
+    return _wsite.getFile("/" + name + ".table");
 }
 
 /**
