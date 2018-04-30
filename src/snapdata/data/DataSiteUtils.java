@@ -28,40 +28,41 @@ public static String executeSelect(DataSite aDataSite, String aCommand)
     if(from<0)
         return "Syntax error";
     
-    // Get entity
-    String entityName = aCommand.substring(from + 4).trim();
-    Entity entity = aDataSite.getSchema().getEntity(entityName);
-    if(entity==null)
+    // Get table
+    String tableName = aCommand.substring(from + 4).trim();
+    DataTable table = aDataSite.getTable(tableName);
+    if(table==null)
         return "Table not found";
     
-    // Get properties
-    List <Property> properties = new ArrayList();
-    String props[] = aCommand.substring(0, from).split(",");
-    for(String prop : props) {
-        if(prop.trim().equals("*")) {
-            properties.addAll(entity.getProperties());
+    // Get entity and properties
+    Entity entity = table.getEntity();
+    List <Property> props = new ArrayList();
+    String propNames[] = aCommand.substring(0, from).split(",");
+    for(String pname : propNames) {
+        if(pname.trim().equals("*")) {
+            props.addAll(entity.getProperties());
             break;
         }
-        Property property = entity.getProperty(prop.trim());
-        if(property!=null)
-            properties.add(property);
+        Property prop = entity.getProperty(pname.trim());
+        if(prop!=null)
+            props.add(prop);
     }
     
     // Create string buffer
     StringBuffer sb = new StringBuffer();
     
     // Append headers
-    for(Property prop : properties)
+    for(Property prop : props)
         sb.append(prop.getName()).append("\t");
-    if(properties.size()>0) sb.delete(sb.length()-1, sb.length());
+    if(props.size()>0) sb.delete(sb.length()-1, sb.length());
     sb.append("\n");
 
     // Get rows and append values
-    List <Row> rows = aDataSite.getRows(new Query(entity));
+    List <Row> rows = table.getRows();
     for(Row row : rows) {
-        for(Property prop : properties)
+        for(Property prop : props)
             sb.append(row.get(prop.getName())).append("\t");
-        if(properties.size()>0) sb.delete(sb.length()-1, sb.length());
+        if(props.size()>0) sb.delete(sb.length()-1, sb.length());
         sb.append("\n");
     }
     

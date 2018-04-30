@@ -92,7 +92,7 @@ public synchronized List <Row> getRows()  { return _rows!=null? _rows : (_rows =
 /**
  * Returns the list of rows for this table view.
  */
-protected List <Row> getRowsImpl()  { return getSite().getRows(getQuery()); }
+protected List <Row> getRowsImpl()  { return _table.getRows(getQuery()); }
 
 /**
  * Adds a row.

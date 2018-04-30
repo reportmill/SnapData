@@ -123,8 +123,14 @@ public Row getRemoteRow()  { return _remoteRow!=null? _remoteRow : (_remoteRow=g
  */
 private Row getRemoteRowImpl()
 {
+    // Just return if bogus
     if(_remoteValue==null) return null;
-    return getSite().getRow(getRelation().getRelEntity(), _remoteValue);
+    
+    // Get remote entity and table and property name
+    Entity entity = getRelation().getRelEntity();
+    DataTable table = getSite().getTable(entity.getName());
+    Row row = table.getRow(_remoteValue);
+    return row;
 }
 
 /**
@@ -137,10 +143,15 @@ public List <Row> getRemoteRows()  { return _remoteRows!=null? _remoteRows : (_r
  */
 private List <Row> getRemoteRowsImpl()
 {
-    Query query = new Query(getRelation().getRelEntity());
-    String remotePropertyName = getRelation().getJoin().getRemotePropName();
-    query.addCondition(remotePropertyName, Condition.Operator.Equals, getRow().getPrimaryValue());
-    List <Row> rows = getSite().getRows(query);
+    // Get remote entity, table and property name
+    Entity entity = getRelation().getRelEntity();
+    DataTable table = getSite().getTable(entity.getName());
+    String remotePropName = getRelation().getJoin().getRemotePropName();
+    Object propVal = getRow().getPrimaryValue();
+    
+    // Create query, fetch and return rows
+    Query query = new Query(entity); query.addCondition(remotePropName, Condition.Operator.Equals, propVal);
+    List <Row> rows = table.getRows(query);
     return rows;
 }
 

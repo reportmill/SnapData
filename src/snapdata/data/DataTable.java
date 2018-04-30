@@ -51,6 +51,45 @@ public Entity getEntity()  { return _entity; }
 protected void setEntity(Entity anEntity)  { _entity = anEntity; }
 
 /**
+ * Returns a row for a given entity and primary value.
+ */
+public Row getRow(Object aPrimeVal)
+{
+    // Make sure PrimaryValue is non-null
+    assert(aPrimeVal!=null);
+    
+    // See if there is a local row - if so return it
+    Row row = getLocalRow(aPrimeVal);
+    if(row!=null && row.getExists())
+        return row;
+        
+    // Create query for fetch
+    Query query = new Query(_entity); query.setFetchLimit(1);
+    query.addCondition(_entity.getPrimary().getName(), Condition.Operator.Equals, aPrimeVal);
+    
+    // Fetch row - if found, set exists
+    List <Row> rows = getRows(query);
+    row = rows.size()>0? rows.get(0) : null;
+    if(row!=null)
+        row.setExists(true);
+
+    // Return row
+    return row;
+}
+
+/**
+ * Returns a set of rows for the given properties and condition.
+ */
+public List <Row> getRows(Query aQuery)
+{
+    // Fetch rows, set Exists and return
+    List <Row> rows; try { rows = _site.getRowsImpl(this, aQuery); }
+    catch(Exception e) { throw new RuntimeException(e); }
+    for(Row row : rows) row.setExists(true);
+    return rows;
+}
+
+/**
  * Returns the primary fetch that returns all rows.
  */
 public Fetch getMasterFetch()
@@ -68,7 +107,7 @@ public List <Row> getRows()  { return getMasterFetch().getRows(); }
 /**
  * Creates a new row.
  */
-public Row createRow()  { return getSite().createRow(getEntity(), null); }
+public Row createRow()  { return getSite().createRow(getEntity(), null, null); }
 
 /**
  * Returns a local row for a primary value.

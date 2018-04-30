@@ -65,7 +65,7 @@ public Row createRow(Entity anEntity, Map aMap)
         return row;
     
     // Create row, add to lists and return
-    row = getSite().createRow(anEntity, null);
+    row = getSite().createRow(anEntity, null, null);
     _providedMaps.add(aMap);
     _createdRows.add(row);
     return row;

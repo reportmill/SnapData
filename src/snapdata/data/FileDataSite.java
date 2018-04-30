@@ -81,18 +81,19 @@ protected void deleteEntityImpl(Entity anEntity) throws Exception
 }
 
 /**
- * Returns a set of rows for the given properties and condition.
+ * Returns a set of rows for the given table and query.
  */
-protected List <Row> getRowsImpl(Entity anEntity, Query aQuery)
+protected List <Row> getRowsImpl(DataTable aTable, Query aQuery)
 {
     // Get entity rows
+    Entity entity = aTable.getEntity();
     Condition condition = aQuery.getCondition();
-    Row entityRows[] = getEntityRows(anEntity).toArray(new Row[0]);
+    Row entityRows[] = getEntityRows(entity).toArray(new Row[0]);
     
     // Create fetch list and add rows that satisfy condition
     List <Row> rows = new ArrayList();
     for(Row row : entityRows)
-        if(condition==null || condition.getValue(anEntity, row))
+        if(condition==null || condition.getValue(entity, row))
             rows.add(row);
     
     // Return rows

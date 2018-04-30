@@ -11,8 +11,8 @@ import snap.util.JSONArchiver.*;
  */
 public class Row extends HashMap <String,Object> implements GetKeys, GetValue, SetValue {
 
-    // The DataSite that provided this row
-    DataSite                   _site;
+    // The table that owns this row
+    DataTable                 _table;
     
     // The original state of this row
     Row                       _original;
@@ -24,7 +24,7 @@ public class Row extends HashMap <String,Object> implements GetKeys, GetValue, S
     boolean                   _exists;
     
     // The row's last save time
-    long                      _modifiedTime;
+    long                      _modTime;
     
     // Whether this row has been modified since last load/save
     boolean                   _modified;
@@ -36,24 +36,24 @@ public class Row extends HashMap <String,Object> implements GetKeys, GetValue, S
     final static String       Modified_Prop = "Modified";
     
 /**
- * Returns the WebSite that created this row.
+ * Returns the table that owns this row.
  */
-public DataSite getSite()  { return _site; }
+public DataTable getTable()  { return _table; }
 
 /**
- * Sets the WebSite that created this row.
+ * Sets the table that owns this row.
  */
-protected void setSite(DataSite aSite)  { _site = aSite; }
+protected void setTable(DataTable aTable)  { _table = aTable; }
+
+/**
+ * Returns the WebSite that created this row.
+ */
+public DataSite getSite()  { return _table.getSite(); }
 
 /**
  * Returns the entity that describes the data in this row.
  */
-public Entity getEntity()  { return _entity; }
-
-/**
- * Sets the entity that describes the data in this row.
- */
-public void setEntity(Entity anEntity)  { _entity = anEntity; }
+public Entity getEntity()  { return _table.getEntity(); }
 
 /**
  * Returns the named property.
@@ -65,9 +65,9 @@ public Property getProperty(String aName)  { return getEntity().getProperty(aNam
  */
 public Object getPrimaryValue()
 {
-    Property primaryProperty = getEntity().getPrimary();
-    Object primaryValue = get(primaryProperty.getName());
-    return primaryValue instanceof Number && ((Number)primaryValue).longValue()==0? null : primaryValue;
+    Property primProp = getEntity().getPrimary();
+    Object primVal = get(primProp.getName());
+    return primVal instanceof Number && ((Number)primVal).longValue()==0? null : primVal;
 }
 
 /**
@@ -76,10 +76,10 @@ public Object getPrimaryValue()
 public void initValues(Map aMap)
 {
     // Initialize row with entity defaults
-    for(Property property : getEntity().getProperties()) { if(property.isPrimary()) continue;
-        Object value = aMap!=null? aMap.get(property.getName()) : null;
-        if(value==null) value = property.getDefaultValue();
-        if(value!=null) put(property.getName(), value);
+    for(Property prop : getEntity().getProperties()) { if(prop.isPrimary()) continue;
+        Object value = aMap!=null? aMap.get(prop.getName()) : null;
+        if(value==null) value = prop.getDefaultValue();
+        if(value!=null) put(prop.getName(), value);
     }
 }
 
@@ -101,10 +101,10 @@ public Object get(String aKey)  { Property p = getProperty(aKey); return p!=null
 /**
  * Returns the current row value for key. If key is a relation, return value as a Row or List <Row>.
  */
-public Object get(Property aProperty)
+public Object get(Property aProp)
 {
     // Get value for property and return RowLink Row/Rows (or value/null?)
-    Object value = getRaw(aProperty);
+    Object value = getRaw(aProp);
     return value instanceof RowLink? ((RowLink)value).getRemoteRowOrRows() : value;
 }
 
@@ -116,25 +116,25 @@ public Object getValue(String aKey)  { Property p = getProperty(aKey); return p!
 /**
  * Returns the current row value for key.
  */
-public Object getValue(Property aProperty)
+public Object getValue(Property aProp)
 {
     // Get value for property and return RowLink Value/Values (or value/null?)
-    Object value = getRaw(aProperty);
+    Object value = getRaw(aProp);
     return value instanceof RowLink? ((RowLink)value).getRemoteValueOrValues() : value;
 }
 
 /**
  * Returns the current value or RowLink for a key.
  */
-protected Object getRaw(Property aProperty)
+protected Object getRaw(Property aProp)
 {
     // Get property name and value
-    String pname = aProperty.getName();
+    String pname = aProp.getName();
     Object value = super.get(pname);
     
     // If null and property is derived relation, create and install row link
-    if(value==null && aProperty.isRelation() && aProperty.isDerived())
-        super.put(pname, value = new RowLink(this, aProperty, null));
+    if(value==null && aProp.isRelation() && aProp.isDerived())
+        super.put(pname, value = new RowLink(this, aProp, null));
     
     // Return value
     return value;
@@ -148,18 +148,18 @@ public Object put(String aKey, Object aValue)  { Property p = getProperty(aKey);
 /**
  * Override put to do conversion.
  */
-public Object put(Property aProperty, Object anObj)
+public Object put(Property aProp, Object anObj)
 {
     // Get raw value and old value (just return if equal)
-    Object value = !aProperty.isRelation()? aProperty.convertValue(anObj) :
-        anObj instanceof RowLink? (RowLink)anObj : new RowLink(this, aProperty, anObj);
-    Object old = getRaw(aProperty); if(SnapUtils.equals(old, value)) return old;
+    Object value = !aProp.isRelation()? aProp.convertValue(anObj) :
+        anObj instanceof RowLink? (RowLink)anObj : new RowLink(this, aProp, anObj);
+    Object old = getRaw(aProp); if(SnapUtils.equals(old, value)) return old;
     
     // If row exists and Original not set, create Original
     if(getExists() && getOriginal()==null) _original = createOriginal();
     
     // Put value, fire PropertyChange and set Modified
-    String pname = aProperty.getName();
+    String pname = aProp.getName();
     super.put(pname, value);
     firePropertyChange(pname, old, value, -1);
     if(getExists()) setModified(true);
@@ -178,7 +178,7 @@ public Row getOriginal()  { return _original; }
  */
 protected Row createOriginal()
 {
-    Row orow = new Row(); orow.setSite(getSite()); orow.setEntity(getEntity());
+    Row orow = new Row(); orow.setTable(getTable());
     List <Property> properties = getEntity().getProperties();
     for(Property prop : properties) { if(prop.isDerived()) continue; Object val = get(prop);
         orow.put(prop, val); }
@@ -227,11 +227,11 @@ public Row remove(String aKey, int anIndex)  { return remove(getProperty(aKey), 
 /**
  * Removes an object from list at given index.
  */
-public Row remove(Property aProperty, int anIndex)
+public Row remove(Property aProp, int anIndex)
 {
-    List <Row> list = (List)get(aProperty), list2 = new ArrayList(list);
+    List <Row> list = (List)get(aProp), list2 = new ArrayList(list);
     Row row = list2.remove(anIndex);
-    put(aProperty, list2);
+    put(aProp, list2);
     return row;
 }
 
@@ -248,12 +248,12 @@ protected void setExists(boolean aFlag)  { _exists = aFlag; }
 /**
  * Returns the file modification time.
  */
-public long getModifiedTime()  { return _modifiedTime; }
+public long getModTime()  { return _modTime; }
 
 /**
  * Sets the file modification time.
  */
-public void setModifiedTime(long aTime)  { _modifiedTime = aTime; }
+public void setModTime(long aTime)  { _modTime = aTime; }
 
 /**
  * Returns whether this row's row object has been changed.
@@ -288,7 +288,7 @@ public void delete()
 }
 
 /** PropChangeListener method to propagate changes from row object to row.  */
-/*void rowObjectDidPropChange(PropChange anEvent) { Property prop = getProperty(anEvent.getPropertyName());
+/*void rowDidPropChange(PropChange anEvent) { Property prop = getProperty(anEvent.getPropertyName());
     if(prop!=null && !prop.isPrimary()) put(prop, anEvent.getNewValue()); }*/
 
 /**
@@ -324,12 +324,12 @@ public List<String> getJSONKeys()
 }
 
 /**
- * RMJSONArchiver method to get archiver values via getValue() and handle NewValues.
+ * JSONArchiver method to get archiver values via getValue() and handle NewValues.
  */
 public Object getJSONValue(String aKey)  { return super.get(aKey); }
 
 /**
- * RMJSONArchiver method to put archiver values and handle NewValues.
+ * JSONArchiver method to put archiver values and handle NewValues.
  */
 public void setJSONValue(String aKey, Object aValue)  { super.put(aKey, aValue); }
 

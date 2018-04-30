@@ -179,107 +179,40 @@ public synchronized DataTable getTable(String aName)
 protected DataTable createTable(String aName)
 {
     Entity entity = getEntity(aName); if(entity==null) return null;
-    DataTable table = createTableImpl(); table.setSite(this); table.setEntity(entity);
+    DataTable table = new DataTable(); table.setSite(this); table.setEntity(entity);
     return table;
 }
 
 /**
- * Creates an instance of DataTable.
- */
-protected DataTable createTableImpl()  { return new DataTable(); }
-
-/**
  * Returns a row for an entity and primary value that is guaranteed to be unique for this data source.
  */
-public Row createRow(Entity anEntity, Object aPrimaryValue)  { return createRow(anEntity, aPrimaryValue, null); }
-
-/**
- * Returns a row for an entity and primary value that is guaranteed to be unique for this data source.
- */
-public synchronized Row createRow(Entity anEntity, Object aPrimaryValue, Map aMap)
+public synchronized Row createRow(Entity anEntity, Object aPrimeVal, Map aMap)
 {
-    // If PrimaryValue provided, check/set LocalRows cache
+    // Get table for entity
+    DataTable table = getTable(anEntity.getName());
     Row row = null;
-    if(aPrimaryValue!=null) {
-        DataTable table = getTable(anEntity.getName());
-        row = table.getLocalRow(aPrimaryValue); if(row!=null) return row;
-        row = createRowImpl(anEntity, aPrimaryValue); row.setSite(this); row.setEntity(anEntity);
-        row.put(anEntity.getPrimary(), aPrimaryValue);
+    
+    // If PrimaryValue provided, check/set LocalRows cache
+    if(aPrimeVal!=null) {
+        row = table.getLocalRow(aPrimeVal); if(row!=null) return row;
+        row = new Row(); row.setTable(table);
+        row.put(anEntity.getPrimary(), aPrimeVal);
         table.addLocalRow(row);
     }
     
     // Otherwise just create row
-    else { row = createRowImpl(anEntity, null); row.setSite(this); row.setEntity(anEntity); }
+    else { row = new Row(); row.setTable(table); }
     
-    // Initialize values, start listening to PropertyChanges and return
+    // Initialize values, start listening to PropChanges and return
     row.initValues(aMap);
     row.addPropChangeListener(_rowLsnr);
     return row;
 }
 
 /**
- * Creates a new row for source.
+ * Returns a set of rows for the given table and query.
  */
-protected Row createRowImpl(Entity anEntity, Object aPrimaryValue)  { return new Row(); }
-
-/**
- * Returns a row for a given entity and primary value.
- */
-public synchronized Row getRow(Entity anEntity, Object aPrimaryValue)
-{
-    // Make sure PrimaryValue is non-null
-    assert(aPrimaryValue!=null);
-    
-    // See if there is a local row - if so return it
-    DataTable dtable = getTable(anEntity.getName());
-    Row row = dtable.getLocalRow(aPrimaryValue);
-    if(row!=null && row.getExists())
-        return row;
-    
-    // Fetch row - if found, set exists
-    row = getRowImpl(anEntity, aPrimaryValue);
-    if(row!=null)
-        row.setExists(true);
-
-    // Return row
-    return row;
-}
-
-/**
- * Returns a row for a given entity and primary value.
- */
-protected Row getRowImpl(Entity anEntity, Object aPrimaryValue)
-{
-    Query query = new Query(anEntity);
-    query.addCondition(anEntity.getPrimary().getName(), Condition.Operator.Equals, aPrimaryValue);
-    return getRow(query);
-}
-
-/**
- * Returns a row for given query.
- */
-public Row getRow(Query aQuery)  { List <Row> rows = getRows(aQuery); return rows.size()>0? rows.get(0) : null; }
-
-/**
- * Returns a set of rows for the given properties and condition.
- */
-public synchronized List <Row> getRows(Query aQuery)
-{
-    // Get query entity (just return if null)
-    String ename = aQuery.getEntityName();
-    Entity entity = getEntity(ename); if(entity==null) return null;
-    
-    // Fetch rows, set Exists and return
-    List <Row> rows; try { rows = getRowsImpl(entity, aQuery); }
-    catch(Exception e) { throw new RuntimeException(e); }
-    for(Row row : rows) row.setExists(true);
-    return rows;
-}
-
-/**
- * Returns a set of rows for the given properties and condition.
- */
-protected List <Row> getRowsImpl(Entity anEntity, Query aQuery) throws Exception { throw notImpl("getRowsImpl"); }
+protected List <Row> getRowsImpl(DataTable aTable, Query aQuery) throws Exception { throw notImpl("getRowsImpl"); }
 
 /**
  * Inserts or updates a given row.

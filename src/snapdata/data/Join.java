@@ -5,7 +5,7 @@ import snap.util.*;
 /**
  * A class to represent the wiring of a Entity relation Property to a foreign Entity Property.
  */
-public class Join extends SnapObject {
+public class Join extends SnapObject implements JSONArchiver.GetKeys, XMLArchiver.Archivable {
 
     // The property that owns this join
     Property          _prop;
