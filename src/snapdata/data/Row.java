@@ -314,7 +314,7 @@ protected void firePropertyChange(String aPropName, Object oldVal, Object newVal
 }
 
 /**
- * RMJSONArchiver method to return keys in property order and, potentially, NewValues key.
+ * JSONArchiver method to return keys in property order and, potentially, NewValues key.
  */
 public List<String> getJSONKeys()
 {

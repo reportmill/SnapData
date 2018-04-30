@@ -78,18 +78,16 @@ public synchronized Entity getEntity(String aName)
 {
     // Get entity from files cache
     Entity entity = _entities.get(aName);
-    if(entity!=null && entity.getExists())
+    if(entity!=null)
         return entity;
     
     // Get entity for name from data source
     try { entity = getEntityImpl(aName); }
     catch(Exception e) { throw new RuntimeException(e); }
     
-    // If found, set Exists to true
-    if(entity!=null) {
-        entity.setExists(true);
+    // If found, add to schema
+    if(entity!=null)
         getSchema().addEntity(entity);
-    }
     
     // Return entity
     return entity;
@@ -100,13 +98,13 @@ public synchronized Entity getEntity(String aName)
  */
 protected Entity getEntityImpl(String aName) throws Exception
 {
-    WebFile efile = _wsite.getFile("/" + aName + ".table");
-    if(efile!=null) {
-        Entity entity = createEntity(efile.getSimpleName());
-        try { return entity.fromBytes(efile.getBytes()); }
-        catch(Exception e) { throw new RuntimeException(e); }
-    }
-    return null;
+    WebFile efile = getEntityFile(aName, false);
+    if(efile==null) return null;
+
+    // Create entity
+    Entity entity = createEntity(efile.getSimpleName());
+    try { return entity.fromBytes(efile.getBytes()); }
+    catch(Exception e) { throw new RuntimeException(e); }
 }
 
 /**
@@ -115,10 +113,7 @@ protected Entity getEntityImpl(String aName) throws Exception
 public void saveEntity(Entity anEntity) throws Exception
 {
     saveEntityImpl(anEntity);
-    if(!anEntity.getExists()) {
-        anEntity.setExists(true);
-        getSchema().addEntity(anEntity);
-    }
+    getSchema().addEntity(anEntity);
 }
 
 /**
@@ -126,7 +121,7 @@ public void saveEntity(Entity anEntity) throws Exception
  */
 protected void saveEntityImpl(Entity anEntity) throws Exception
 {
-    WebFile efile = getEntitySourceFile(anEntity); if(efile==null) return;
+    WebFile efile = getEntityFile(anEntity.getName(), true); if(efile==null) return;
     efile.setBytes(anEntity.toBytes());
     efile.save();
 }
@@ -137,7 +132,6 @@ protected void saveEntityImpl(Entity anEntity) throws Exception
 public void deleteEntity(Entity anEntity) throws Exception
 {
     deleteEntityImpl(anEntity);
-    anEntity.setExists(false);
     getSchema().removeEntity(anEntity);
 }
 
@@ -146,17 +140,19 @@ public void deleteEntity(Entity anEntity) throws Exception
  */
 protected void deleteEntityImpl(Entity anEntity) throws Exception
 {
-    WebFile efile = getEntitySourceFile(anEntity); if(efile==null) return;
+    WebFile efile = getEntityFile(anEntity.getName(), false); if(efile==null) return;
     efile.delete();
 }
 
 /**
- * Returns the entity source file.
+ * Returns the entity file.
  */
-protected WebFile getEntitySourceFile(Entity anEntity)
+protected WebFile getEntityFile(String aName, boolean doCreate)
 {
-    String name = anEntity.getName();
-    return _wsite.getFile("/" + name + ".table");
+    String path = "/" + aName + ".table";
+    WebFile file = _wsite.getFile(path);
+    if(file==null && doCreate) file = _wsite.createFile(path, false);
+    return file;
 }
 
 /**

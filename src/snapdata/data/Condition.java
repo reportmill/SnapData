@@ -325,7 +325,7 @@ public Condition fromXML(XMLArchiver anArchiver, XMLElement anElement)
 }
 
 /**
- * RMJSONArchiver.GetKeys method.
+ * JSONArchiver.GetKeys method.
  */
 public List<String> getJSONKeys()
 {

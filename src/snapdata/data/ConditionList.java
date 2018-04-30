@@ -193,7 +193,7 @@ public ConditionList clone()
 }
 
 /**
- * RMJSONArchiver.GetKeys method.
+ * JSONArchiver.GetKeys method.
  */
 public List<String> getJSONKeys()  { return Arrays.asList("Conditions"); }
 

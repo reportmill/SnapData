@@ -208,7 +208,7 @@ public Query clone()
 }
 
 /**
- * RMJSONArchiver.GetKeys method.
+ * JSONArchiver.GetKeys method.
  */
 public List <String> getJSONKeys()  { return Arrays.asList("EntityName", "Condition", "FetchLimit", "Sorts"); }
 

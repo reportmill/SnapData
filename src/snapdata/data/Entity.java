@@ -23,9 +23,6 @@ public class Entity extends SnapObject implements JSONArchiver.GetKeys, XMLArchi
     // The key/key-chain to the property(s) that returns best string description of an entity instance
     String             _descKey;
     
-    // Whether entity exists in data source
-    boolean            _exists;
-    
     // Cached lists of properties that are attributes (simple properties), relations, primaries, etc.
     List <Property>    _attrs, _relations, _primaries, _attrsSorted, _relationsSorted;
     
@@ -74,20 +71,6 @@ public void setName(String aName)
     String name = aName!=null? aName.trim().replace(" ", "") : null;
     if(SnapUtils.equals(name, _name)) return;
     firePropChange(Name_Prop, _name, _name = name);
-}
-
-/**
- * Returns whether entity exists in data source (has been saved and, if so, not deleted).
- */
-public boolean getExists()  { return _exists; }
-
-/**
- * Sets whether entity exists in data source (has been saved and, if so, not deleted).
- */
-public void setExists(boolean aFlag)
-{
-    if(aFlag==_exists) return;
-    firePropChange(Exists_Prop, _exists, _exists = aFlag);
 }
 
 /**
@@ -421,16 +404,6 @@ public Entity fromBytes(byte theBytes[])
     String string = StringUtils.getString(theBytes);
     return (Entity)new JSONArchiver().setRootObject(this).readString(string);
 }
-
-/**
- * Saves the entity to its source.
- */
-public void save() throws Exception  { getSchema().getSite().saveEntity(this); }
-
-/**
- * Saves this entity from its source.
- */
-public void delete() throws Exception  { getSchema().getSite().deleteEntity(this); }
 
 /**
  * Returns keys to archive JSON.

@@ -17,13 +17,13 @@ public class RowLink {
     Property          _relation;
     
     // The remote primary value
-    Object            _remoteValue;
+    Object            _remoteVal;
     
     // The remote row
     Row               _remoteRow;
     
     // The remote values
-    List              _remoteValues;
+    List              _remoteVals;
     
     // The remote rows
     List <Row>        _remoteRows;
@@ -43,9 +43,9 @@ public RowLink(Row aRow, Property aRelation, Object aRemoteValue)
     else if(aRemoteValue instanceof List) { List list = (List)aRemoteValue;
         if(list.size()>0 && list.get(0) instanceof Row)
             _remoteRows = list;
-        else _remoteValues = list;
+        else _remoteVals = list;
     }
-    else _remoteValue = aRemoteValue;
+    else _remoteVal = aRemoteValue;
 }
 
 /**
@@ -76,31 +76,30 @@ public boolean isToMany()  { return _relation.isToMany(); }
 /**
  * Returns the remote value.
  */
-public Object getRemoteValue()  { return _remoteValue!=null? _remoteValue : (_remoteValue=getRemoteValueImpl()); }
-
-/**
- * Returns the remote value.
- */
-private Object getRemoteValueImpl()
+public Object getRemoteValue()
 {
+    // If already set, just return
+    if(_remoteVal!=null) return _remoteVal;
     if(_remoteRow==null) return null;
-    return _remoteRow.get(getRelation().getJoin().getRemoteProp());
+    
+    // Create, set and return
+    Object val = _remoteRow.get(getRelation().getJoin().getRemoteProp());
+    return _remoteVal = val;
 }
 
 /**
  * Returns the remote values.
  */
-public List getRemoteValues()  { return _remoteValues!=null? _remoteValues : (_remoteValues=getRemoteValuesImpl()); }
-
-/**
- * Returns the remote values.
- */
-private List getRemoteValuesImpl()
+public List getRemoteValues()
 {
-    List <Row> rows = getRemoteRows(); if(rows==null) return Collections.emptyList();
-    List values = new ArrayList(rows.size());
-    for(Row row : rows) values.add(row.getPrimaryValue());
-    return values;
+    // If already set, just return
+    if(_remoteVals!=null) return _remoteVals;
+
+    // Create, set and return
+    List <Row> rows = getRemoteRows(); if(rows==null) return _remoteVals = Collections.emptyList();
+    List vals = new ArrayList(rows.size());
+    for(Row row : rows) vals.add(row.getPrimaryValue());
+    return _remoteVals = vals;
 }
 
 /**
@@ -116,33 +115,27 @@ public boolean isRemoteRowSet()  { return (isToOne()? _remoteRow : _remoteRows)=
 /**
  * Returns the remote row.
  */
-public Row getRemoteRow()  { return _remoteRow!=null? _remoteRow : (_remoteRow=getRemoteRowImpl()); }
-
-/**
- * Returns the remote row.
- */
-private Row getRemoteRowImpl()
+public Row getRemoteRow()
 {
-    // Just return if bogus
-    if(_remoteValue==null) return null;
+    // If already set, just return
+    if(_remoteRow!=null) return _remoteRow;
+    if(_remoteVal==null) return null;
     
     // Get remote entity and table and property name
     Entity entity = getRelation().getRelEntity();
     DataTable table = getSite().getTable(entity.getName());
-    Row row = table.getRow(_remoteValue);
-    return row;
+    Row row = table.getRow(_remoteVal);
+    return _remoteRow = row;
 }
 
 /**
  * Returns the remote rows.
  */
-public List <Row> getRemoteRows()  { return _remoteRows!=null? _remoteRows : (_remoteRows=getRemoteRowsImpl()); }
-
-/**
- * Returns the remote rows.
- */
-private List <Row> getRemoteRowsImpl()
+public List <Row> getRemoteRows()
 {
+    // if already set, just return
+    if(_remoteRows!=null) return _remoteRows;
+
     // Get remote entity, table and property name
     Entity entity = getRelation().getRelEntity();
     DataTable table = getSite().getTable(entity.getName());
@@ -152,7 +145,7 @@ private List <Row> getRemoteRowsImpl()
     // Create query, fetch and return rows
     Query query = new Query(entity); query.addCondition(remotePropName, Condition.Operator.Equals, propVal);
     List <Row> rows = table.getRows(query);
-    return rows;
+    return _remoteRows = rows;
 }
 
 /**
