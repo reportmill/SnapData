@@ -232,7 +232,7 @@ public synchronized void saveRow(Row aRow) throws Exception
     aRow.setExists(true);
     aRow.setModified(false);
     if(!exists) {
-        DataTable dtable = getTable(aRow.getEntity().getName());
+        DataTable dtable = aRow.getTable();
         dtable.addLocalRow(aRow);
     }
 }
@@ -252,7 +252,7 @@ public synchronized void deleteRow(Row aRow) throws Exception
     
     // Set Exists to false and remove from table
     aRow.setExists(false);
-    DataTable dtable = getTable(aRow.getEntity().getName());
+    DataTable dtable = aRow.getTable();
     dtable.removeLocalRow(aRow);    
 }
 

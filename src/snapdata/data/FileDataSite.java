@@ -12,10 +12,10 @@ import snap.web.WebFile;
 public class FileDataSite extends DataSite {
 
     // The map of row-lists generated from import
-    Map <Entity, List <Row>>      _entityRows = new HashMap();
+    Map <String, List <Row>>      _tableRows = new HashMap();
     
-    // Dirty entity set
-    Set <Entity>                  _dirtyEntities = new HashSet();
+    // Dirty table name set
+    Set <String>                  _dirtyTables = new HashSet();
     
 /**
  * Override to delete data file.
@@ -33,10 +33,11 @@ protected void deleteTableImpl(DataTable aTable) throws Exception
  */
 protected List <Row> getRowsImpl(DataTable aTable, Query aQuery)
 {
-    // Get entity rows
+    // Get table rows
+    String name = aTable.getName();
     Entity entity = aTable.getEntity();
     Condition condition = aQuery.getCondition();
-    Row rows[] = getRows(entity).toArray(new Row[0]);
+    Row rows[] = getRows(name).toArray(new Row[0]);
     
     // Create fetch list and add rows that satisfy condition
     List <Row> rows2 = new ArrayList();
@@ -53,14 +54,15 @@ protected List <Row> getRowsImpl(DataTable aTable, Query aQuery)
  */
 protected void saveRowImpl(Row aRow)
 {
-    // Get row entity
+    // Get row table name and entity
+    String tableName = aRow.getTable().getName();
     Entity entity = aRow.getEntity();
     
-    // If row hasn't been saved yet, insert into entity rows and update any auto generated properties
+    // If row hasn't been saved yet, insert into table rows and update any auto generated properties
     if(!aRow.getExists()) {
         
-        // Add to entity rows
-        List <Row> rows = getRows(entity);
+        // Add to table rows
+        List <Row> rows = getRows(tableName);
         rows.add(aRow);
     
         // Set auto-generated properties
@@ -71,8 +73,8 @@ protected void saveRowImpl(Row aRow)
             }
     }
     
-    // Add dirty entity
-    synchronized (this) { _dirtyEntities.add(entity); }
+    // Add dirty table
+    synchronized (this) { _dirtyTables.add(tableName); }
 }
 
 /**
@@ -80,13 +82,13 @@ protected void saveRowImpl(Row aRow)
  */
 protected void deleteRowImpl(Row aRow)
 {
-    // Get EntityRows list for Entity and row for PrimaryValue (just return if no row for PrimaryValue)
-    Entity entity = aRow.getEntity();
-    List <Row> rows = getRows(entity);
+    // Get table name and rows list for row
+    String tableName = aRow.getTable().getName();
+    List <Row> rows = getRows(tableName);
     
-    // Remove row and add row entity to DirtyEntities set
+    // Remove row and add table name to DirtyTables set
     ListUtils.removeId(rows, aRow);
-    synchronized (this) { _dirtyEntities.add(entity); }
+    synchronized (this) { _dirtyTables.add(tableName); }
 }
 
 /**
@@ -110,29 +112,33 @@ protected WebFile getDataFile(String aName, boolean doCreate)
 }
 
 /**
- * Returns the list of rows for a given entity, reading from file if not cached.
+ * Returns the list of rows for a given table name, reading from file if not cached.
  */
-protected synchronized List <Row> getRows(Entity anEntity)
+protected synchronized List <Row> getRows(String aName)
 {
     // Get rows from cache map and return if found
-    List <Row> rows = _entityRows.get(anEntity); if(rows!=null) return rows;
+    List <Row> rows = _tableRows.get(aName); if(rows!=null) return rows;
     
     // Otherwise, read rows from file, add to cache map and return
-    rows = readDataFile(anEntity);
-    _entityRows.put(anEntity, rows);
+    rows = readDataFile(aName);
+    _tableRows.put(aName, rows);
     return rows;
 }
     
 /**
  * Reads the CSV file and returns the list of rows for given table.
  */
-protected List <Row> readDataFile(Entity anEntity)
+protected List <Row> readDataFile(String aTableName)
 {
+    // Get table and entity
+    DataTable table = getTable(aTableName);
+    Entity entity = table.getEntity();
+    
     // Create rows list
     List <Row> rows = Collections.synchronizedList(new ArrayList());
 
     // Get data file
-    WebFile file = getDataFile(anEntity.getName(), false);
+    WebFile file = getDataFile(aTableName, false);
     if(file==null)
         return rows;
     
@@ -143,14 +149,14 @@ protected List <Row> readDataFile(Entity anEntity)
     csvReader.setHasQuotedFields(true);
     
     // Read maps
-    List <Map> maps = csvReader.readObject(file.getBytes(), anEntity.getName(), false);
+    List <Map> maps = csvReader.readObject(file.getBytes(), aTableName, false);
     
-    // Create rows for maps and add to entityRows list
-    Property primeProp = anEntity.getPrimary(); int np = 0;
+    // Create rows for maps and add to tableRows list
+    Property primeProp = entity.getPrimary(); int np = 0;
     for(Map map : maps) {                                    // Should be able to remove this prime val line soon
         Object pv = map.get(primeProp.getName()); if(pv==null) map.put(primeProp.getName(), String.valueOf(np++));
         Object pval = primeProp.convertValue(map.get(primeProp.getName()));
-        Row row = createRow(anEntity, pval, map);
+        Row row = createRow(entity, pval, map);
         rows.add(row);
     }
     
@@ -159,37 +165,39 @@ protected List <Row> readDataFile(Entity anEntity)
 }
 
 /**
- * Save CSV files for changed entities.
+ * Save CSV files for changed tables.
  */
 protected void saveDataFiles() throws Exception
 {
-    // If no dirty entities, just return
-    if(_dirtyEntities.size()==0) return;
+    // If no dirty tables, just return
+    if(_dirtyTables.size()==0) return;
 
-    // Copy and clear DirtyEntities
-    Entity entities[];
+    // Copy and clear DirtyTables
+    String tableNames[];
     synchronized (this) {
-        entities = _dirtyEntities.toArray(new Entity[_dirtyEntities.size()]);
-        _dirtyEntities.clear();        
+        tableNames = _dirtyTables.toArray(new String[_dirtyTables.size()]);
+        _dirtyTables.clear();        
     }
 
     // Save files
-    for(Entity entity : entities) saveDataFile(entity);
+    for(String tableName : tableNames) saveDataFile(tableName);
 }
 
 /**
- * Save CSV files for changed entity.
+ * Save CSV files for changed table name.
  */
-protected void saveDataFile(Entity anEntity) throws Exception
+protected void saveDataFile(String aTableName) throws Exception
 {
-    // Get entity rows and StringBuffer
-    Row rows[] = getRows(anEntity).toArray(new Row[0]);
+    // Get table, entity, table rows and StringBuffer
+    DataTable table = getTable(aTableName);
+    Entity entity = table.getEntity();
+    Row rows[] = getRows(aTableName).toArray(new Row[0]);
     StringBuffer sbuffer = new StringBuffer();
     
     // Iterate over properties and add header row
-    for(Property property : anEntity.getProperties())
-        if(!property.isDerived())
-            sbuffer.append(StringUtils.getStringQuoted(property.getName())).append(", ");
+    for(Property prop : entity.getProperties())
+        if(!prop.isDerived())
+            sbuffer.append(StringUtils.getStringQuoted(prop.getName())).append(", ");
     
     // Replace trailing field delimiter with record delimiter
     sbuffer.delete(sbuffer.length()-2, sbuffer.length()).append("\n");
@@ -198,13 +206,13 @@ protected void saveDataFile(Entity anEntity) throws Exception
     for(Row row : rows) {
     
         // Iterate over properties
-        for(Property property : anEntity.getProperties()) {
+        for(Property prop : entity.getProperties()) {
             
             // Skip derived properties
-            if(property.isDerived()) continue;
+            if(prop.isDerived()) continue;
             
             // Get value and string
-            Object value = row.getValue(property);
+            Object value = row.getValue(prop);
             String string = (String)DataUtils.convertValue(value, Property.Type.String);
             if(string==null)
                 string = "";
@@ -218,7 +226,7 @@ protected void saveDataFile(Entity anEntity) throws Exception
     }
     
     // Get CSV file, set bytes and save
-    WebFile csvFile = getDataFile(anEntity.getName(), true);
+    WebFile csvFile = getDataFile(aTableName, true);
     byte bytes[] = StringUtils.getBytes(sbuffer.toString()); csvFile.setBytes(bytes);
     csvFile.save();
 }
