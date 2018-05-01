@@ -17,67 +17,15 @@ public class FileDataSite extends DataSite {
     // Dirty entity set
     Set <Entity>                  _dirtyEntities = new HashSet();
     
-    // Table data file extension
-    static final String           TableEntityFileExt = ".table";  // Was .entity
-    static final String           TableDataFileExt = ".csv"; 
-
 /**
- * Get entity by loading from entity file.
- */
-protected Entity getEntityImpl(String aName) throws Exception
-{
-    Entity entity = null; //super.getEntityImpl(aName); if(entity!=null) return entity;
-    WebFile entityFile = getTableEntityFile(aName, false); if(entityFile==null) return null;
-    entity = createEntity(aName);
-    if(entityFile.getBytes().length<20)
-        makeAddrFile();
-    entity.fromBytes(entityFile.getBytes());
-    return entity;
-}
-
-void makeAddrFile()
-{
-    Entity entity = new Entity("Address");
-    Property id = new Property("Id", Property.NumberType.Integer); id.setPrimary(true);
-    Property name = new Property("Name", Property.Type.String);
-    Property street = new Property("Street", Property.Type.String);
-    Property city = new Property("CityStateZip", Property.Type.String);
-    Property phone = new Property("Phone", Property.Type.String);
-    entity.addProperty(id);
-    entity.addProperty(name);
-    entity.addProperty(street);
-    entity.addProperty(city);
-    entity.addProperty(phone);
-    
-    byte bytes[] = entity.toBytes();
-    WebFile efile = getTableEntityFile("Address", true);
-    efile.setBytes(bytes);
-    efile.save();
-}
-
-/**
- * Save entity by saving entity bytes to entity file.
- */
-protected void saveEntityImpl(Entity anEntity) throws Exception
-{
-    super.saveEntityImpl(anEntity);
-    WebFile entityFile = getTableEntityFile(anEntity.getName(), true);
-    entityFile.setBytes(anEntity.toBytes());
-    entityFile.save();
-}
-
-/**
- * Delete entity file and entity table data file.
+ * Override to delete data file.
  */
 protected void deleteEntityImpl(Entity anEntity) throws Exception
 {
     super.deleteEntityImpl(anEntity);
-    WebFile efile = getTableEntityFile(anEntity.getName(), false);
-    if(efile!=null)
-        efile.delete();
-    WebFile tfile = getTableDataFile(anEntity.getName(), false);
-    if(tfile!=null)
-        tfile.delete();
+    WebFile csvFile = getDataFile(anEntity.getName(), false);
+    if(csvFile!=null)
+        csvFile.delete();
 }
 
 /**
@@ -88,16 +36,16 @@ protected List <Row> getRowsImpl(DataTable aTable, Query aQuery)
     // Get entity rows
     Entity entity = aTable.getEntity();
     Condition condition = aQuery.getCondition();
-    Row entityRows[] = getEntityRows(entity).toArray(new Row[0]);
+    Row rows[] = getRows(entity).toArray(new Row[0]);
     
     // Create fetch list and add rows that satisfy condition
-    List <Row> rows = new ArrayList();
-    for(Row row : entityRows)
+    List <Row> rows2 = new ArrayList();
+    for(Row row : rows)
         if(condition==null || condition.getValue(entity, row))
-            rows.add(row);
+            rows2.add(row);
     
     // Return rows
-    return rows;
+    return rows2;
 }
 
 /**
@@ -112,13 +60,13 @@ protected void saveRowImpl(Row aRow)
     if(!aRow.getExists()) {
         
         // Add to entity rows
-        List <Row> entityRows = getEntityRows(entity);
-        entityRows.add(aRow);
+        List <Row> rows = getRows(entity);
+        rows.add(aRow);
     
         // Set auto-generated properties
         for(Property prop : entity.getProperties())
             if(prop.isAutoGen()) {
-                int maxID = 0; for(Row row : entityRows) maxID = Math.max(maxID,SnapUtils.intValue(row.get(prop)));
+                int maxID = 0; for(Row row : rows) maxID = Math.max(maxID,SnapUtils.intValue(row.get(prop)));
                 aRow.put(prop, maxID + 1);
             }
     }
@@ -134,18 +82,90 @@ protected void deleteRowImpl(Row aRow)
 {
     // Get EntityRows list for Entity and row for PrimaryValue (just return if no row for PrimaryValue)
     Entity entity = aRow.getEntity();
-    List <Row> entityRows = getEntityRows(entity);
+    List <Row> rows = getRows(entity);
     
     // Remove row and add row entity to DirtyEntities set
-    ListUtils.removeId(entityRows, aRow);
+    ListUtils.removeId(rows, aRow);
     synchronized (this) { _dirtyEntities.add(entity); }
 }
 
 /**
- * Save entity files for changed entities.
+ * Override to Saves changes if any made.
  */
-protected void saveEntityFiles() throws Exception
+public void flush() throws Exception
 {
+    super.flush();
+    saveDataFiles();
+}
+
+/**
+ * Returns the CSV file for given table name.
+ */
+protected WebFile getDataFile(String aName, boolean doCreate)
+{
+    String path = "/" + aName + ".csv";
+    WebFile tfile = _wsite.getFile(path);
+    if(tfile==null && doCreate) tfile = _wsite.createFile(path, false);
+    return tfile;
+}
+
+/**
+ * Returns the list of rows for a given entity, reading from file if not cached.
+ */
+protected synchronized List <Row> getRows(Entity anEntity)
+{
+    // Get rows from cache map and return if found
+    List <Row> rows = _entityRows.get(anEntity); if(rows!=null) return rows;
+    
+    // Otherwise, read rows from file, add to cache map and return
+    rows = readDataFile(anEntity);
+    _entityRows.put(anEntity, rows);
+    return rows;
+}
+    
+/**
+ * Reads the CSV file and returns the list of rows for given table.
+ */
+protected List <Row> readDataFile(Entity anEntity)
+{
+    // Create rows list
+    List <Row> rows = Collections.synchronizedList(new ArrayList());
+
+    // Get data file
+    WebFile file = getDataFile(anEntity.getName(), false);
+    if(file==null)
+        return rows;
+    
+    // Create CSVReader
+    CSVReader csvReader = new CSVReader();
+    csvReader.setFieldDelimiter(",");
+    csvReader.setHasHeaderRow(true);
+    csvReader.setHasQuotedFields(true);
+    
+    // Read maps
+    List <Map> maps = csvReader.readObject(file.getBytes(), anEntity.getName(), false);
+    
+    // Create rows for maps and add to entityRows list
+    Property primeProp = anEntity.getPrimary(); int np = 0;
+    for(Map map : maps) {                                    // Should be able to remove this prime val line soon
+        Object pv = map.get(primeProp.getName()); if(pv==null) map.put(primeProp.getName(), String.valueOf(np++));
+        Object pval = primeProp.convertValue(map.get(primeProp.getName()));
+        Row row = createRow(anEntity, pval, map);
+        rows.add(row);
+    }
+    
+    // Return rows
+    return rows;
+}
+
+/**
+ * Save CSV files for changed entities.
+ */
+protected void saveDataFiles() throws Exception
+{
+    // If no dirty entities, just return
+    if(_dirtyEntities.size()==0) return;
+
     // Copy and clear DirtyEntities
     Entity entities[];
     synchronized (this) {
@@ -154,16 +174,16 @@ protected void saveEntityFiles() throws Exception
     }
 
     // Save files
-    for(Entity entity : entities) saveEntityFile(entity);
+    for(Entity entity : entities) saveDataFile(entity);
 }
 
 /**
- * Save entity files for changed entities.
+ * Save CSV files for changed entity.
  */
-protected void saveEntityFile(Entity anEntity) throws Exception
+protected void saveDataFile(Entity anEntity) throws Exception
 {
     // Get entity rows and StringBuffer
-    Row entityRows[] = getEntityRows(anEntity).toArray(new Row[0]);
+    Row rows[] = getRows(anEntity).toArray(new Row[0]);
     StringBuffer sbuffer = new StringBuffer();
     
     // Iterate over properties and add header row
@@ -175,7 +195,7 @@ protected void saveEntityFile(Entity anEntity) throws Exception
     sbuffer.delete(sbuffer.length()-2, sbuffer.length()).append("\n");
 
     // Iterate over rows
-    for(Row row : entityRows) {
+    for(Row row : rows) {
     
         // Iterate over properties
         for(Property property : anEntity.getProperties()) {
@@ -197,84 +217,10 @@ protected void saveEntityFile(Entity anEntity) throws Exception
         sbuffer.delete(sbuffer.length()-2, sbuffer.length()).append("\n");
     }
     
-    // Get entity file, set bytes and save
-    WebFile entityFile = getTableDataFile(anEntity.getName(), true);
-    byte bytes[] = StringUtils.getBytes(sbuffer.toString()); entityFile.setBytes(bytes);
-    entityFile.save();
-}
-
-/**
- * Override to Saves changes if any made.
- */
-public void flush() throws Exception
-{
-    super.flush();
-    if(_dirtyEntities.size()>0)
-        saveEntityFiles();
-}
-
-/**
- * Returns the file for the given entity.
- */
-protected WebFile getTableEntityFile(String aName, boolean doCreate)
-{
-    String path = "/" + aName + TableEntityFileExt;
-    WebFile tfile = _wsite.getFile(path);
-    if(tfile==null && doCreate) tfile = _wsite.createFile(path, false);
-    return tfile;
-}
-
-/**
- * Returns the file for the given entity.
- */
-protected WebFile getTableDataFile(String aName, boolean doCreate)
-{
-    String path = "/" + aName + TableDataFileExt;
-    WebFile tfile = _wsite.getFile(path);
-    if(tfile==null && doCreate) tfile = _wsite.createFile(path, false);
-    return tfile;
-}
-
-/**
- * Returns the list of rows for a given entity.
- */
-protected synchronized List <Row> getEntityRows(Entity anEntity)
-{
-    // Get entity rows
-    List <Row> entityRows = _entityRows.get(anEntity);
-    if(entityRows!=null)
-        return entityRows;
-    
-    // Create and set entity rows list
-    _entityRows.put(anEntity, entityRows = Collections.synchronizedList(new ArrayList()));
-    
-    // Get data file
-    WebFile dataFile = getTableDataFile(anEntity.getName(), false);
-    
-    // If file exists, read rows
-    if(dataFile!=null) {
-        
-        // Create CSVReader
-        CSVReader csvReader = new CSVReader();
-        csvReader.setFieldDelimiter(",");
-        csvReader.setHasHeaderRow(true);
-        csvReader.setHasQuotedFields(true);
-        
-        // Read maps
-        List <Map> maps = csvReader.readObject(dataFile.getBytes(), anEntity.getName(), false);
-        
-        // Create rows for maps and add to entityRows list
-        Property primeProp = anEntity.getPrimary(); int np = 0;
-        for(Map map : maps) {
-            Object pv = map.get(primeProp.getName()); if(pv==null) map.put(primeProp.getName(), String.valueOf(np++));
-            Object pval = primeProp.convertValue(map.get(primeProp.getName()));
-            Row row = createRow(anEntity, pval, map);
-            entityRows.add(row);
-        }
-    }
-    
-    // Return entity rows
-    return entityRows;
+    // Get CSV file, set bytes and save
+    WebFile csvFile = getDataFile(anEntity.getName(), true);
+    byte bytes[] = StringUtils.getBytes(sbuffer.toString()); csvFile.setBytes(bytes);
+    csvFile.save();
 }
 
 }

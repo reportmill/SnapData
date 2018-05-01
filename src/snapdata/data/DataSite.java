@@ -98,10 +98,11 @@ public synchronized Entity getEntity(String aName)
  */
 protected Entity getEntityImpl(String aName) throws Exception
 {
+    // Get entity file (if not found, complain and return)
     WebFile efile = getEntityFile(aName, false);
-    if(efile==null) return null;
+    if(efile==null) { System.err.println("DataSite:getEntity: Entity file not found"); return null; }
 
-    // Create entity
+    // Create entity, load from file bytes and return
     Entity entity = createEntity(efile.getSimpleName());
     try { return entity.fromBytes(efile.getBytes()); }
     catch(Exception e) { throw new RuntimeException(e); }
@@ -165,11 +166,12 @@ public synchronized List <DataTable> getTables()  { return new ArrayList(_tables
  */
 public synchronized DataTable getTable(String aName)
 {
-    DataTable table = _tables.get(aName);
-    if(table==null) {
-        table = createTable(aName); if(table==null) return null;
-        _tables.put(aName, table);
-    }
+    // Get table from cache, just return if found
+    DataTable table = _tables.get(aName); if(table!=null) return table;
+
+    // Create, add and return
+    table = createTable(aName); if(table==null) return null;
+    _tables.put(aName, table);
     return table;
 }
 
