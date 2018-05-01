@@ -56,17 +56,12 @@ public Row createRow(String aTableName, Map aMap)
         return row;
     
     // Create row, add to lists and return
-    Entity entity = getSite().getEntity(aTableName);
-    row = getSite().createRow(entity, null, null);
+    DataTable table = getSite().getTable(aTableName);
+    row = table.createRow(aMap);
     _providedMaps.add(aMap);
     _createdRows.add(row);
     return row;
 }
-
-/**
- * Imports a map.
- */
-public Row createRow(Entity anEntity, Map aMap)  { return createRow(anEntity.getName(), aMap); }
 
 /**
  * Creates a row deep.
@@ -92,15 +87,17 @@ public void createRowDeep(Row aRow, Map aMap)
         
         // If to-one, create row and add
         else if(value instanceof Map) { Map map = (Map)value;
-            value = createRow(prop.getRelEntity(), map);
+            String tableName = prop.getRelEntity().getName();
+            value = createRow(tableName, map);
             aRow.put(prop, value);
         }
         
         // If to-many, get list of rows for maps and add
         else if(value instanceof List) { List list = (List)value, list2 = new ArrayList();
+            String tableName = prop.getRelEntity().getName();
             for(Object item : list) { Map map = (Map)item;
-                Row createdRow = createRow(prop.getRelEntity(), map);
-                list2.add(createdRow); }
+                Row newRow = createRow(tableName, map);
+                list2.add(newRow); }
             aRow.put(prop, list2);
         }
         

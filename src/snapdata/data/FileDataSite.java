@@ -59,7 +59,7 @@ protected void saveRowImpl(Row aRow)
     Entity entity = aRow.getEntity();
     
     // If row hasn't been saved yet, insert into table rows and update any auto generated properties
-    if(!aRow.getExists()) {
+    if(!aRow.isSaved()) {
         
         // Add to table rows
         List <Row> rows = getRows(tableName);
@@ -67,7 +67,7 @@ protected void saveRowImpl(Row aRow)
     
         // Set auto-generated properties
         for(Property prop : entity.getProperties())
-            if(prop.isAutoGen()) {
+            if(prop.isPrimary()) {  // isAutoGen()?
                 int maxID = 0; for(Row row : rows) maxID = Math.max(maxID,SnapUtils.intValue(row.get(prop)));
                 aRow.put(prop, maxID + 1);
             }
@@ -134,6 +134,10 @@ protected List <Row> readDataFile(String aTableName)
     DataTable table = getTable(aTableName);
     Entity entity = table.getEntity();
     
+    // Get prime property and name
+    Property primeProp = entity.getPrimary(); int nextPrime = 0; // Should be able to remove this prime val soon
+    String primeName = primeProp.getName();
+    
     // Create rows list
     List <Row> rows = Collections.synchronizedList(new ArrayList());
 
@@ -149,14 +153,13 @@ protected List <Row> readDataFile(String aTableName)
     csvReader.setHasQuotedFields(true);
     
     // Read maps
-    List <Map> maps = csvReader.readObject(file.getBytes(), aTableName, false);
+    List <Map<String,String>> maps = csvReader.readObject(file.getBytes(), aTableName, false);
     
     // Create rows for maps and add to tableRows list
-    Property primeProp = entity.getPrimary(); int np = 0;
-    for(Map map : maps) {                                    // Should be able to remove this prime val line soon
-        Object pv = map.get(primeProp.getName()); if(pv==null) map.put(primeProp.getName(), String.valueOf(np++));
-        Object pval = primeProp.convertValue(map.get(primeProp.getName()));
-        Row row = createRow(entity, pval, map);
+    for(Map <String,String> map : maps) {
+        String pstr = map.get(primeName); if(pstr==null) pstr = String.valueOf(nextPrime++);
+        Object pval = primeProp.convertValue(pstr);
+        Row row = createSavedRow(table, pval, map);
         rows.add(row);
     }
     

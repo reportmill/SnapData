@@ -60,7 +60,7 @@ public Row getRow(Object aPrimeVal)
     
     // See if there is a local row - if so return it
     Row row = getLocalRow(aPrimeVal);
-    if(row!=null && row.getExists())
+    if(row!=null && row.isSaved())
         return row;
         
     // Create query for fetch
@@ -71,7 +71,7 @@ public Row getRow(Object aPrimeVal)
     List <Row> rows = getRows(query);
     row = rows.size()>0? rows.get(0) : null;
     if(row!=null)
-        row.setExists(true);
+        row.setSaved(true);
 
     // Return row
     return row;
@@ -85,8 +85,46 @@ public List <Row> getRows(Query aQuery)
     // Fetch rows, set Exists and return
     List <Row> rows; try { rows = _site.getRowsImpl(this, aQuery); }
     catch(Exception e) { throw new RuntimeException(e); }
-    for(Row row : rows) row.setExists(true);
+    for(Row row : rows) row.setSaved(true);
     return rows;
+}
+
+/**
+ * Creates a new row.
+ */
+public Row createRow(Map aMap)
+{
+    // Create row and set values
+    Row row = new Row(); row.setTable(this);
+    row.initValues(aMap);
+    
+    // Return row
+    return row;
+}
+
+/**
+ * Returns a local row for a primary value.
+ */
+protected synchronized Row getLocalRow(Object aPrimaryValue)  { return _localRows.get(aPrimaryValue); }
+
+/**
+ * Adds a local row.
+ */
+protected synchronized void addLocalRow(Row aRow)
+{
+    // Put row (just return if identical)
+    Row old = _localRows.put(aRow.getPrimaryValue(), aRow); if(aRow==old || !aRow.isSaved()) return;
+    firePropChange(LocalRow_Prop, aRow, old); _mfetch = null;
+}
+
+/**
+ * Removes a local row.
+ */
+protected synchronized void removeLocalRow(Row aRow)
+{
+    // Remove row
+    Row old = _localRows.remove(aRow.getPrimaryValue()); if(old==null) return;
+    firePropChange(LocalRow_Prop, null, old); _mfetch = null;
 }
 
 /**
@@ -102,37 +140,7 @@ public Fetch getMasterFetch()
 /**
  * Returns all table rows.
  */
-public List <Row> getRows()  { return getMasterFetch().getRows(); }
-
-/**
- * Creates a new row.
- */
-public Row createRow()  { return getSite().createRow(getEntity(), null, null); }
-
-/**
- * Returns a local row for a primary value.
- */
-public synchronized Row getLocalRow(Object aPrimaryValue)  { return _localRows.get(aPrimaryValue); }
-
-/**
- * Adds a local row.
- */
-protected synchronized void addLocalRow(Row aRow)
-{
-    // Put row (just return if identical)
-    Row old = _localRows.put(aRow.getPrimaryValue(), aRow); if(aRow==old || !aRow.getExists()) return;
-    firePropChange(LocalRow_Prop, aRow, old);
-}
-
-/**
- * Removes a local row.
- */
-protected synchronized void removeLocalRow(Row aRow)
-{
-    // Remove row
-    Row old = _localRows.remove(aRow.getPrimaryValue()); if(old==null) return;
-    firePropChange(LocalRow_Prop, null, old);
-}
+public List <Row> getAllRows()  { return getMasterFetch().getRows(); }
 
 /**
  * Standard toString implementation.

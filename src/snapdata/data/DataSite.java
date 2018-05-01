@@ -168,59 +168,42 @@ protected void deleteTableImpl(DataTable aTable) throws Exception
 }
 
 /**
- * Returns the entity file.
- */
-protected WebFile getEntityFile(String aName, boolean doCreate)
-{
-    String path = "/" + aName + ".table";
-    WebFile file = _wsite.getFile(path);
-    if(file==null && doCreate) file = _wsite.createFile(path, false);
-    return file;
-}
-
-/**
- * Returns a row for an entity and primary value that is guaranteed to be unique for this data source.
- */
-public synchronized Row createRow(Entity anEntity, Object aPrimeVal, Map aMap)
-{
-    // Get table for entity
-    DataTable table = getTable(anEntity.getName());
-    Row row = null;
-    
-    // If PrimaryValue provided, check/set LocalRows cache
-    if(aPrimeVal!=null) {
-        row = table.getLocalRow(aPrimeVal); if(row!=null) return row;
-        row = new Row(); row.setTable(table);
-        row.put(anEntity.getPrimary(), aPrimeVal);
-        table.addLocalRow(row);
-    }
-    
-    // Otherwise just create row
-    else { row = new Row(); row.setTable(table); }
-    
-    // Initialize values, start listening to PropChanges and return
-    row.initValues(aMap);
-    row.addPropChangeListener(_rowLsnr);
-    return row;
-}
-
-/**
  * Returns a set of rows for the given table and query.
  */
 protected List <Row> getRowsImpl(DataTable aTable, Query aQuery) throws Exception { throw notImpl("getRowsImpl"); }
 
 /**
+ * Returns a row for an entity and primary value that is guaranteed to be unique for this data source.
+ */
+protected synchronized Row createSavedRow(DataTable aTable, Object aPrimeVal, Map aMap)
+{
+    // Check for row in table local cache, just return if already there
+    Row row = aTable.getLocalRow(aPrimeVal); if(row!=null) return row;
+    
+    // Create row and set values
+    row = new Row(); row.setTable(aTable);
+    row.put(aTable.getEntity().getPrimary(), aPrimeVal);
+    row.initValues(aMap);
+    row.setSaved(true);
+    
+    // Add to table cache, set listener and return
+    aTable.addLocalRow(row);
+    row.addPropChangeListener(_rowLsnr);
+    return row;
+}
+
+/**
  * Inserts or updates a given row.
  */
-public synchronized void saveRow(Row aRow) throws Exception
+protected synchronized void saveRow(Row aRow) throws Exception
 {
     // If row exists and hasn't changed, just return
-    boolean exists = aRow.getExists(); if(exists && !aRow.isModified()) return;
+    boolean exists = aRow.isSaved(); if(exists && !aRow.isModified()) return;
     
     // If there are UnresolvedRelationRows, make sure they get saved
     Row urows[] = aRow.getUnresolvedRelationRows();
     if(urows!=null) {
-        if(!exists) { saveRowImpl(aRow); aRow.setExists(true); } // Save this row first in case of circular reference
+        if(!exists) { saveRowImpl(aRow); aRow.setSaved(true); } // Save this row first in case of circular reference
         for(Row urow : urows)
             urow.save();
     }
@@ -228,30 +211,31 @@ public synchronized void saveRow(Row aRow) throws Exception
     // Save row for real
     saveRowImpl(aRow);
     
-    // Set row exists and not modified and add to DataTable
-    aRow.setExists(true);
+    // Set row Saved and not modified and add to table.LocalRows
+    aRow.setSaved(true);
     aRow.setModified(false);
     if(!exists) {
         DataTable dtable = aRow.getTable();
         dtable.addLocalRow(aRow);
+        assert(aRow.getPrimaryValue()!=null);
     }
 }
 
 /**
- * Inserts or updates a given row.
+ * Inserts or updates a given row. This should also set primary value if missing.
  */
 protected void saveRowImpl(Row aRow) throws Exception  { throw notImpl("saveRowImpl"); }
 
 /**
  * Deletes a given row.
  */
-public synchronized void deleteRow(Row aRow) throws Exception
+protected synchronized void deleteRow(Row aRow) throws Exception
 {
     // Delete row
     deleteRowImpl(aRow);
     
-    // Set Exists to false and remove from table
-    aRow.setExists(false);
+    // Set Saved to false and remove from table
+    aRow.setSaved(false);
     DataTable dtable = aRow.getTable();
     dtable.removeLocalRow(aRow);    
 }
@@ -262,7 +246,7 @@ public synchronized void deleteRow(Row aRow) throws Exception
 protected void deleteRowImpl(Row aRow) throws Exception  { throw notImpl("deleteRowImpl"); }
 
 /**
- * Clears site Schema and ClassLoader.
+ * Clears site Schema, rows and files.
  */
 public synchronized void refresh()  { _schema = null; _wsite.refresh(); }
 
@@ -270,6 +254,17 @@ public synchronized void refresh()  { _schema = null; _wsite.refresh(); }
  * Flushes any unsaved changes to backing store.
  */
 public void flush() throws Exception  { _wsite.flush(); }
+
+/**
+ * Returns the entity file.
+ */
+protected WebFile getEntityFile(String aName, boolean doCreate)
+{
+    String path = "/" + aName + ".table";
+    WebFile file = _wsite.getFile(path);
+    if(file==null && doCreate) file = _wsite.createFile(path, false);
+    return file;
+}
 
 /**
  * Called when row changes.

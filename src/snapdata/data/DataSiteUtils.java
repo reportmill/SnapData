@@ -58,7 +58,7 @@ public static String executeSelect(DataSite aDataSite, String aCommand)
     sb.append("\n");
 
     // Get rows and append values
-    List <Row> rows = table.getRows();
+    List <Row> rows = table.getAllRows();
     for(Row row : rows) {
         for(Property prop : props)
             sb.append(row.get(prop.getName())).append("\t");

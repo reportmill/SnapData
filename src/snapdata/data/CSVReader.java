@@ -79,12 +79,12 @@ public void setHasQuotedFields(boolean aFlag)  { _hasQuotedFields = aFlag; }
 /**
  * Reads given source and returns list of maps.
  */
-public List <Map> readObject(Object aSource)  { return readObject(aSource, null, true); }
+public List <Map<String,String>> readObject(Object aSource)  { return readObject(aSource, null, true); }
 
 /**
  * Reads given source and returns list of maps.
  */
-public List <Map> readObject(Object aSource, Entity anEntity)
+public List <Map<String,String>> readObject(Object aSource, Entity anEntity)
 {
     _entity = anEntity;
     return readObject(aSource, null, true);
@@ -93,7 +93,7 @@ public List <Map> readObject(Object aSource, Entity anEntity)
 /**
  * Reads records from given string (and creates entity).
  */
-public List <Map> readObject(Object aSource, String aName, boolean doReadFormat)
+public List <Map<String,String>> readObject(Object aSource, String aName, boolean doReadFormat)
 {
     // Get source string
     String string = getSourceString(aSource);
@@ -138,13 +138,13 @@ public List <Map> readObject(Object aSource, String aName, boolean doReadFormat)
     }
     
     // Create maps list
-    List <Map> maps = new ArrayList();
+    List <Map<String,String>> maps = new ArrayList();
 
     // Iterate over records to determine property types and add rows
     for(int i=getHasHeaderRow()? 1 : 0, iMax=dataset.size(); i<iMax; i++) { String record[] = dataset.get(i);
         
         // Create map
-        Map map = new HashMap();
+        Map <String,String> map = new HashMap();
         
         // Iterate over entity properties
         for(int j=0, jMax=_entity.getPropertyCount(), k=0; j<jMax; j++) { Property prop = _entity.getProperty(j);

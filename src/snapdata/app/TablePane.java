@@ -55,7 +55,7 @@ public DataTable getDataTable()
 /**
  * Returns the list of rows for table.
  */
-public List <Row> getRows()  { return getDataTable().getRows(); }
+public List <Row> getRows()  { return getDataTable().getAllRows(); }
 
 /**
  * Returns the row count.
@@ -97,9 +97,8 @@ public void setSelIndex(int anIndex)
  */
 public void addRow()
 {
-    Row row = getDataTable().createRow();
-    try { row.save(); }
-    catch(Exception e)  { showErrorDialog(getUI(), "Add Row Failed: " + e); return; }
+    Row row = getDataTable().createRow(null);
+    row.save();
     
     rowsDidChange();
     setSelRow(row);
@@ -111,15 +110,15 @@ public void addRow()
 public void removeRow()
 {
     // Remove selected row and delete
+    int ind = getSelIndex();
     Row row = getSelRow(); if(row==null) { beep(); return; }
-    try { row.delete(); }
-    catch(Exception e) { showErrorDialog(getUI(), "Remove Row Failed: " + e); return; }
+    row.delete();
     
     rowsDidChange();
     
     // Select next row
-    int ind = getSelIndex(); if(ind>=getRowCount()) ind = getRowCount() - 1;
-    setSelIndex(ind);
+    int ind2 = ind<getRowCount()? ind : getRowCount() - 1;
+    setSelIndex(ind2);
 }
 
 /**

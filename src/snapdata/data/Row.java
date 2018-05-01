@@ -20,8 +20,8 @@ public class Row extends HashMap <String,Object> implements GetKeys, GetValue, S
     // The entity that describes the data in this row
     Entity                    _entity;
     
-    // Whether this row exists in WebSite
-    boolean                   _exists;
+    // Whether this row exists in DataSite
+    boolean                   _saved;
     
     // The row's last save time
     long                      _modTime;
@@ -156,13 +156,13 @@ public Object put(Property aProp, Object anObj)
     Object old = getRaw(aProp); if(SnapUtils.equals(old, value)) return old;
     
     // If row exists and Original not set, create Original
-    if(getExists() && getOriginal()==null) _original = createOriginal();
+    if(isSaved() && getOriginal()==null) _original = createOriginal();
     
     // Put value, fire PropertyChange and set Modified
     String pname = aProp.getName();
     super.put(pname, value);
     firePropertyChange(pname, old, value, -1);
-    if(getExists()) setModified(true);
+    if(isSaved()) setModified(true);
     
     // Return old value
     return old;
@@ -236,14 +236,14 @@ public Row remove(Property aProp, int anIndex)
 }
 
 /**
- * Returns whether file exists in data source (has been saved and, if so, not deleted).
+ * Returns whether row exists in site (has been saved and, if so, not deleted).
  */
-public boolean getExists()  { return _exists; }
+public boolean isSaved()  { return _saved; }
 
 /**
- * Sets whether file exists in data source (has been saved and, if so, not deleted).
+ * Sets whether row exists in site (has been saved and, if so, not deleted).
  */
-protected void setExists(boolean aFlag)  { _exists = aFlag; }
+protected void setSaved(boolean aFlag)  { _saved = aFlag; }
 
 /**
  * Returns the file modification time.
