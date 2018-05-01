@@ -17,19 +17,28 @@ public class DataSite extends SnapObject {
     // The schema
     Schema                    _schema;
     
-    // The entities
-    Map <String, Entity>      _entities = new HashMap();
-    
     // The DataTables
     Map <String,DataTable>    _tables = new HashMap();
     
     // PropChangeListener for Row changes
     PropChangeListener        _rowLsnr = pc -> rowDidPropChange(pc);
     
+    // All sites
+    static Map <WebSite,DataSite> _allSites = new HashMap();
+
 /**
  * Returns the WebSite.
  */
 public WebSite getSite()  { return _wsite; }
+
+/**
+ * Sets the WebSite.
+ */
+protected void setSite(WebSite aSite)
+{
+     _wsite = aSite;
+    _allSites.put(aSite, this);
+}
 
 /**
  * Returns the name.
@@ -52,100 +61,13 @@ public synchronized Schema getSchema()
 }
 
 /**
- * Creates an entity for given name.
+ * Returns the table entity for given name.
  */
-public synchronized Entity createEntity(String aName)
+public Entity getEntity(String aName)
 {
-    // If entity already exists, just return it
-    Entity entity = _entities.get(aName); if(entity!=null) return entity;
-    
-    // Create and add entity
-    entity = new Entity(); entity.setName(aName); entity.setSchema(getSchema());
-    _entities.put(aName, entity);
+    DataTable table = getTable(aName);
+    Entity entity = table!=null? table.getEntity() : null;
     return entity;
-}
-
-/**
- * Returns the entity for given name.
- */
-public synchronized Entity getEntity(String aName)
-{
-    // Get entity from cache, just return if found
-    Entity entity = _entities.get(aName); if(entity!=null) return entity;
-    
-    // Get entity for name from data source
-    try { entity = getEntityImpl(aName); }
-    catch(Exception e) { throw new RuntimeException(e); }
-    
-    // If found, add to schema
-    if(entity!=null)
-        getSchema().addEntity(entity);
-    
-    // Return entity
-    return entity;
-}
-
-/**
- * Returns the entity for given name.
- */
-protected Entity getEntityImpl(String aName) throws Exception
-{
-    // Get entity file (if not found, complain and return)
-    WebFile efile = getEntityFile(aName, false);
-    if(efile==null) { System.err.println("DataSite:getEntity: Entity file not found"); return null; }
-
-    // Create entity, load from file bytes and return
-    Entity entity = createEntity(efile.getSimpleName());
-    try { return entity.fromBytes(efile.getBytes()); }
-    catch(Exception e) { throw new RuntimeException(e); }
-}
-
-/**
- * Saves the given entity.
- */
-public void saveEntity(Entity anEntity) throws Exception
-{
-    saveEntityImpl(anEntity);
-    getSchema().addEntity(anEntity);
-}
-
-/**
- * Saves the given entity.
- */
-protected void saveEntityImpl(Entity anEntity) throws Exception
-{
-    WebFile efile = getEntityFile(anEntity.getName(), true); if(efile==null) return;
-    efile.setBytes(anEntity.toBytes());
-    efile.save();
-}
-
-/**
- * Saves the given entity.
- */
-public void deleteEntity(Entity anEntity) throws Exception
-{
-    deleteEntityImpl(anEntity);
-    getSchema().removeEntity(anEntity);
-}
-
-/**
- * Saves the given entity.
- */
-protected void deleteEntityImpl(Entity anEntity) throws Exception
-{
-    WebFile efile = getEntityFile(anEntity.getName(), false); if(efile==null) return;
-    efile.delete();
-}
-
-/**
- * Returns the entity file.
- */
-protected WebFile getEntityFile(String aName, boolean doCreate)
-{
-    String path = "/" + aName + ".table";
-    WebFile file = _wsite.getFile(path);
-    if(file==null && doCreate) file = _wsite.createFile(path, false);
-    return file;
 }
 
 /**
@@ -161,20 +83,99 @@ public synchronized DataTable getTable(String aName)
     // Get table from cache, just return if found
     DataTable table = _tables.get(aName); if(table!=null) return table;
 
-    // Create, add and return
-    table = createTable(aName); if(table==null) return null;
+    // Create table with impl-specific version
+    try { table = getTableImpl(aName); }
+    catch(Exception e) { throw new RuntimeException(e); }
+    if(table==null) return null;
+    
+    // Get entity and add to schema
+    Entity entity = table.getEntity();
+    getSchema().addEntity(entity);
+    
+    // Add table to map and return
     _tables.put(aName, table);
     return table;
 }
 
 /**
- * Creates a DataTable for given entity name.
+ * Returns the table for given name (impl-specific version for subclasses).
+ * This version loads the entity from file at site:/TableName.table.
  */
-protected DataTable createTable(String aName)
+protected DataTable getTableImpl(String aName) throws Exception
 {
-    Entity entity = getEntity(aName); if(entity==null) return null;
+    // Get entity file (if not found, complain and return)
+    WebFile efile = getEntityFile(aName, false);
+    if(efile==null) { System.err.println("DataSite:getTableImpl: Entity file not found"); return null; }
+
+    // Create entity, load from file bytes and return
+    Entity entity = new Entity(aName);
+    try { entity.fromBytes(efile.getBytes()); }
+    catch(Exception e) { throw new RuntimeException(e); }
+    
+    // Create/configure DataTable and return
     DataTable table = new DataTable(); table.setSite(this); table.setEntity(entity);
     return table;
+}
+
+/**
+ * Creates a table for given entity.
+ */
+public DataTable createTable(Entity anEntity, String oldTableName) throws Exception
+{
+    // Get old table and call implementation specific version
+    DataTable oldTable = oldTableName!=null? getTable(oldTableName) : null;
+    createTableImpl(anEntity, oldTable);
+    
+    // Load table normally and return
+    DataTable table = getTable(anEntity.getName());
+    return table;
+}
+
+/**
+ * Creates table for given entity (impl-specific version for subclasses).
+ * This version just saves the entity to a file at site:/TableName.table.
+ */
+public void createTableImpl(Entity anEntity, DataTable aTable) throws Exception
+{
+    WebFile efile = getEntityFile(anEntity.getName(), true); if(efile==null) return;
+    efile.setBytes(anEntity.toBytes());
+    efile.save();
+}
+
+/**
+ * Deletes the table for given table name.
+ */
+public void deleteTable(String aTableName) throws Exception
+{
+    // Get table and call implementation specific version
+    DataTable table = getTable(aTableName);
+    deleteTableImpl(table);
+    
+    // Remove entity from schema
+    Entity entity = table.getEntity();
+    getSchema().removeEntity(entity);
+}
+
+/**
+ * Deletes table for given table name (impl-specific version for subclasses).
+ * This version just deletes the entity file at site:/TableName.table.
+ */
+protected void deleteTableImpl(DataTable aTable) throws Exception
+{
+    String name = aTable.getName();
+    WebFile efile = getEntityFile(name, false); if(efile==null) return;
+    efile.delete();
+}
+
+/**
+ * Returns the entity file.
+ */
+protected WebFile getEntityFile(String aName, boolean doCreate)
+{
+    String path = "/" + aName + ".table";
+    WebFile file = _wsite.getFile(path);
+    if(file==null && doCreate) file = _wsite.createFile(path, false);
+    return file;
 }
 
 /**
@@ -283,13 +284,12 @@ private Exception notImpl(String aStr)  { return new Exception(getClass().getNam
  */
 public static DataSite get(WebSite aSite)
 {
-    DataSite dsite = _dsites.get(aSite);
-    if(dsite==null) {
-        dsite = new FileDataSite(); dsite._wsite = aSite;
-        _dsites.put(aSite, dsite);
-    }
+    // Get site from AllSites map, just return if found
+    DataSite dsite = _allSites.get(aSite); if(dsite!=null) return dsite;
+
+    // Create new FileDataSite, set site and return
+    dsite = new FileDataSite(); dsite.setSite(aSite);
     return dsite;
 }
-static Map <WebSite,DataSite> _dsites = new HashMap();
 
 }

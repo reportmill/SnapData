@@ -20,10 +20,10 @@ public class FileDataSite extends DataSite {
 /**
  * Override to delete data file.
  */
-protected void deleteEntityImpl(Entity anEntity) throws Exception
+protected void deleteTableImpl(DataTable aTable) throws Exception
 {
-    super.deleteEntityImpl(anEntity);
-    WebFile csvFile = getDataFile(anEntity.getName(), false);
+    super.deleteTableImpl(aTable);
+    WebFile csvFile = getDataFile(aTable.getName(), false);
     if(csvFile!=null)
         csvFile.delete();
 }
