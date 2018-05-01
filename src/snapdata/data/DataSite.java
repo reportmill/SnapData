@@ -29,7 +29,7 @@ public class DataSite extends SnapObject {
 /**
  * Returns the WebSite.
  */
-public WebSite getWebSite()  { return _wsite; }
+public WebSite getSite()  { return _wsite; }
 
 /**
  * Returns the name.
@@ -60,26 +60,18 @@ public synchronized Entity createEntity(String aName)
     Entity entity = _entities.get(aName); if(entity!=null) return entity;
     
     // Create and add entity
-    _entities.put(aName, entity = createEntityImpl(aName));
-    entity.setName(aName);
-    entity.setSchema(getSchema());
+    entity = new Entity(); entity.setName(aName); entity.setSchema(getSchema());
+    _entities.put(aName, entity);
     return entity;
 }
 
 /**
  * Returns the entity for given name.
  */
-protected Entity createEntityImpl(String aName)  { return new Entity(); }
-
-/**
- * Returns the entity for given name.
- */
 public synchronized Entity getEntity(String aName)
 {
-    // Get entity from files cache
-    Entity entity = _entities.get(aName);
-    if(entity!=null)
-        return entity;
+    // Get entity from cache, just return if found
+    Entity entity = _entities.get(aName); if(entity!=null) return entity;
     
     // Get entity for name from data source
     try { entity = getEntityImpl(aName); }
