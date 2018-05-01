@@ -47,16 +47,7 @@ public DataSite getSite()  { return _site; }
 /**
  * Creates a new row for given entity name and map.
  */
-public Row createRow(String anEntityName, Map aMap)
-{
-    Entity entity = getSite().getEntity(anEntityName);
-    return createRow(entity, aMap);
-}
-
-/**
- * Imports a map.
- */
-public Row createRow(Entity anEntity, Map aMap)
+public Row createRow(String aTableName, Map aMap)
 {
     // Look for previously created row for provided object
     int index = ListUtils.indexOfId(_providedMaps, aMap);
@@ -65,50 +56,56 @@ public Row createRow(Entity anEntity, Map aMap)
         return row;
     
     // Create row, add to lists and return
-    row = getSite().createRow(anEntity, null, null);
+    Entity entity = getSite().getEntity(aTableName);
+    row = getSite().createRow(entity, null, null);
     _providedMaps.add(aMap);
     _createdRows.add(row);
     return row;
 }
 
 /**
+ * Imports a map.
+ */
+public Row createRow(Entity anEntity, Map aMap)  { return createRow(anEntity.getName(), aMap); }
+
+/**
  * Creates a row deep.
  */
-public void createRowDeep(Map aMap, Row aRow)
+public void createRowDeep(Row aRow, Map aMap)
 {
     // Get entity
     Entity entity = aRow.getEntity();
     
     // Add properties
-    for(Property property : entity.getProperties()) {
+    for(Property prop : entity.getProperties()) {
         
         // If property is primary or derived, just skip
-        if(property.isPrimary()) continue;
+        if(prop.isPrimary()) continue;
         
         // Get provided object property value (just skip if null)
-        String pname = property.getName();
+        String pname = prop.getName();
         Object value = aMap.get(pname); if(value==null) continue;
         
         // If property isn't relation, just add
-        if(!property.isRelation() || property.getRelEntity()==null)
-            aRow.put(property, value);
+        if(!prop.isRelation() || prop.getRelEntity()==null)
+            aRow.put(prop, value);
         
         // If to-one, create row and add
         else if(value instanceof Map) { Map map = (Map)value;
-            value = createRow(property.getRelEntity(), map);
-            aRow.put(property, value);
+            value = createRow(prop.getRelEntity(), map);
+            aRow.put(prop, value);
         }
         
         // If to-many, get list of rows for maps and add
         else if(value instanceof List) { List list = (List)value, list2 = new ArrayList();
             for(Object item : list) { Map map = (Map)item;
-                Row createdRow = createRow(property.getRelEntity(), map);
+                Row createdRow = createRow(prop.getRelEntity(), map);
                 list2.add(createdRow); }
-            aRow.put(property, list2);
+            aRow.put(prop, list2);
         }
         
         // Otherwise complain
-        else System.err.println("WebSiteImporter.createRowDeep: Import failure " + entity.getName() + "." + pname);
+        else System.err.println("BulkImporter.createRowDeep: Import failure " + entity.getName() + "." + pname);
     }
 }
 
@@ -119,7 +116,7 @@ public void saveRows()
 {
     // Make sure all rows have been created deep
     for(int i=0; i<_providedMaps.size(); i++)
-        createRowDeep(_providedMaps.get(i), _createdRows.get(i));
+        createRowDeep(_createdRows.get(i), _providedMaps.get(i));
     
     // Save row for all created rows
     for(Row row : _createdRows)
