@@ -6,6 +6,7 @@ import snap.util.*;
 import snap.view.*;
 import snap.viewx.*;
 import snap.web.*;
+import snapdata.data.*;
 
 /**
  * A class to handle visual management of app files.
@@ -266,7 +267,7 @@ public void respondUI(ViewEvent anEvent)
     }
     
     // Handle NewFileMenuItem, NewFileButton
-    //if(anEvent.equals("NewFileMenuItem") || anEvent.equals("NewFileButton")) _appPane.showNewFilePanel();
+    if(anEvent.equals("NewFileMenuItem") || anEvent.equals("NewFileButton")) showNewFilePanel();
 
     // Handle RemoveFileMenuItem
     if(anEvent.equals("RemoveFileMenuItem"))
@@ -412,7 +413,14 @@ public boolean renameFile(WebFile aFile, String aName)
 /**
  * Runs a panel for a new file (Java, JFX, Swing, table, etc.).
  */
-public void showNewFilePanel() { }
+public void showNewFilePanel()
+{
+    DataTable table = new TableEditor(DataSite.get(getSite()), null, null).showPanel(getAppPane().getUI());
+    if(table!=null) {
+        WebFile file = getSite().getFile("/" + table.getName() + ".table");
+        _appPane.setSelectedFile(file);
+    }
+}
 /*{
     // Get new FormBuilder and configure
     FormBuilder form = new FormBuilder(); form.setPadding(20, 5, 15, 5);

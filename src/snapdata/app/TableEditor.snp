@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ColView Padding="5" Spacing="5">
+  <Label PrefWidth="280" PrefHeight="26" Padding="2" text="Configure Table">
+    <font name="Arial Bold" size="20" />
+  </Label>
+  <Separator PrefWidth="566" GrowWidth="true" />
+  <RowView Padding="4" Spacing="4">
+    <Label text="Table Name:">
+      <font name="Arial Bold" size="14" />
+    </Label>
+    <TextField Name="TableNameText" PrefWidth="254" PrefHeight="25" ColCount="12">
+      <font name="Arial Bold" size="16" />
+    </TextField>
+    <Button Name="AddPropButton" PrefWidth="90" PrefHeight="22" text="Add Property" />
+    <Button Name="RemovePropButton" PrefWidth="80" PrefHeight="22" text="Remove" />
+  </RowView>
+  <RowView Align="TOP_LEFT" Padding="4" Spacing="10">
+    <ColView Spacing="4">
+      <Label PrefWidth="158" PrefHeight="22" text="Fields:">
+        <font name="Arial Bold" size="14" />
+      </Label>
+      <ListView Name="PropsList" PrefWidth="160" PrefHeight="230" ItemKey="Name">
+        <font name="Arial" size="15" />
+      </ListView>
+      <ColView GrowHeight="true" LeanX="CENTER">
+        <CheckBox Name="HasIdCheckBox" text="ID Property">
+          <font name="Arial" size="10" />
+        </CheckBox>
+        <CheckBox Name="HasCreatedCheckBox" text="Date Created">
+          <font name="Arial" size="10" />
+        </CheckBox>
+        <CheckBox Name="HasModifiedCheckBox" text="Date Modified">
+          <font name="Arial" size="10" />
+        </CheckBox>
+      </ColView>
+    </ColView>
+    <ColView Spacing="4">
+      <Label PrefHeight="22" text="Field Name:">
+        <font name="Arial Bold" size="14" />
+      </Label>
+      <TextField Name="PropNameText" PrefWidth="154" PrefHeight="22" ColCount="12" />
+      <Label PrefHeight="22" text="Field Type:">
+        <font name="Arial Bold" size="14" />
+      </Label>
+      <ListView Name="FieldTypeList" PrefWidth="130" PrefHeight="155" />
+    </ColView>
+  </RowView>
+</ColView>
