@@ -147,13 +147,11 @@ protected List <Row> readDataFile(String aTableName)
         return rows;
     
     // Create CSVReader
-    CSVReader csvReader = new CSVReader();
-    csvReader.setFieldDelimiter(",");
-    csvReader.setHasHeaderRow(true);
-    csvReader.setHasQuotedFields(true);
+    CSVReader csvReader = new CSVReader(); csvReader.setFieldSep(",");
+    csvReader.setHasHeaderRow(true); csvReader.setHasQuotedFields(true);
     
     // Read maps
-    List <Map<String,String>> maps = csvReader.readObject(file.getBytes(), aTableName, false);
+    List <Map<String,String>> maps = csvReader.readFromString(file.getText(), aTableName, false);
     
     // Create rows for maps and add to tableRows list
     for(Map <String,String> map : maps) {

@@ -192,12 +192,12 @@ public void setHasIdProp(boolean aValue)
     
     // Add property
     if(aValue) {
-        Property property = new Property("Id");
-        property.setType(Property.Type.Number);
-        property.setNumberType(Property.NumberType.Integer);
-        property.setAutoGen(true);
-        property.setPrimary(true);
-        getEntity().addProperty(property, 0);
+        Property prop = new Property("Id");
+        prop.setType(Property.Type.Number);
+        prop.setNumberType(Property.NumberType.Integer);
+        prop.setAutoGen(true);
+        prop.setPrimary(true);
+        getEntity().addProperty(prop, 0);
     }
     
     // Or remove property

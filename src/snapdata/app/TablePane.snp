@@ -4,7 +4,7 @@
     <Label text="Records:">
       <font name="Arial Bold" size="16" />
     </Label>
-    <Button Padding="2,6,2,6" LeanX="RIGHT" text="Import Data" />
+    <Button Name="ImportButton" Padding="2,6,2,6" LeanX="RIGHT" text="Import Data" />
   </RowView>
   <SplitView Vertical="true" GrowWidth="true" GrowHeight="true">
     <TableView Name="RowsTable" MinWidth="220" MinHeight="120" GrowWidth="true" GrowHeight="true" ShowHeader="false">

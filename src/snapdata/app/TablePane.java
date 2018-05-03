@@ -188,6 +188,10 @@ protected void respondUI(ViewEvent anEvent)
             removeRow();
     }
     
+    // Handle ImportButton
+    if(anEvent.equals("ImportButton"))
+        new ImportRowsPanel().showPanel(this);
+    
     // Handle RowBackButton, RowBackAllButton, RowNextButton, RowNextAllButton, RowText
     if(anEvent.equals("RowBackButton")) setSelIndex(getSelIndex()-1);
     if(anEvent.equals("RowBackAllButton")) setSelIndex(0);
@@ -202,7 +206,7 @@ protected void respondUI(ViewEvent anEvent)
 /**
  * Called when list of rows has changed.
  */
-void rowsDidChange()
+public void rowsDidChange()
 {
     _rowsTable.setItems(getRows());
     rowValuesChanged();

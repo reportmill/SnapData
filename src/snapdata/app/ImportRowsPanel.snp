@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ColView Padding="10" Spacing="4" GrowHeight="true">
+  <RowView Align="TOP_LEFT" GrowWidth="true">
+    <ColView Spacing="4">
+      <Label Name="Label" text="Table Import Panel">
+        <font name="Arial Bold" size="20" />
+      </Label>
+      <Label text="Paste or drag tab or comma separated data/file" />
+      <CheckBox Name="HasHeaderCheckBox" text="First Row Contains Headers" />
+    </ColView>
+    <ColView LeanX="RIGHT" Spacing="5">
+      <Button Name="PasteButton" PrefWidth="80" PrefHeight="22" text="Paste" />
+      <Button Name="ClearButton" PrefWidth="80" PrefHeight="22" text="Clear" />
+    </ColView>
+  </RowView>
+  <TableView Name="ImportTable" PrefWidth="389" PrefHeight="255" GrowWidth="true" GrowHeight="true" ShowHeader="true">
+    <LineBorder Color="#c0c0c0" />
+    <font name="Arial" size="12" />
+  </TableView>
+</ColView>
