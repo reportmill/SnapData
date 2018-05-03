@@ -62,7 +62,7 @@ public DataTable showPanel(View aView)
     
     // Create DialogBox that resets OK.DefaultButton property and has TableEditor UI as content
     DialogBox dbox = new DialogBox("Configure Table Panel");
-    dbox.setContent(getUI());
+    dbox.setContent(getUI()); dbox.setConfirmOnEnter(false);
     
     // Show option pane
     if(!dbox.showConfirmDialog(aView)) return null;
@@ -287,6 +287,16 @@ protected void initUI()
     String keys[] = { "String", "Enum", "Relation", "RelationList" };
     String vals[] = { "Text", "Choice", "Record", "Record List" };
     for(int i=0; i<keys.length; i++) ptypes.put(keys[i], vals[i]);
+    
+    // Configure TableNameText and PropNameText to selectAll when focused
+    TextField tableNameText = getView("TableNameText", TextField.class);
+    tableNameText.addPropChangeListener(
+        pc -> { if(tableNameText.isFocused()) runLater(() -> tableNameText.selectAll()); },
+        View.Focused_Prop);
+    TextField propNameText = getView("PropNameText", TextField.class);
+    propNameText.addPropChangeListener(
+        pc -> { if(propNameText.isFocused()) runLater(() -> propNameText.selectAll()); },
+        View.Focused_Prop);
 }
 
 /**
@@ -327,10 +337,14 @@ public void respondUI(ViewEvent anEvent)
     Property prop = getSelProp();
 
     // Handle TableNameText
-    if(anEvent.equals("TableNameText")) getEntity().setName(anEvent.getStringValue());
+    if(anEvent.equals("TableNameText")) {
+        getEntity().setName(anEvent.getStringValue());
+        requestFocus("PropNameText");
+    }
     
     // Handle AddPropButton, RemovePropButton
-    if(anEvent.equals("AddPropButton")) addProp();
+    if(anEvent.equals("AddPropButton")) { addProp(); requestFocus("PropNameText");
+        runLater(() -> runLater(() -> getView("PropNameText", TextField.class).selectAll())); }
     if(anEvent.equals("RemovePropButton")) removeProp();
     
     // Handle PropsList
@@ -352,10 +366,6 @@ public void respondUI(ViewEvent anEvent)
     
     // Handle FieldTypeList
     if(anEvent.equals("FieldTypeList")) prop.setTypeName(anEvent.getStringValue());
-    
-    // Have TableNameText, AddPropertyButton and PropertiesList select PropertyNameText
-    if(anEvent.equals("TableNameText") || anEvent.equals("AddPropertyButton"))
-        requestFocus("PropertyNameText");
 }
 
 }
