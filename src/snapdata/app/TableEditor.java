@@ -339,7 +339,7 @@ public void respondUI(ViewEvent anEvent)
     // Handle TableNameText
     if(anEvent.equals("TableNameText")) {
         getEntity().setName(anEvent.getStringValue());
-        requestFocus("PropNameText");
+        requestFocus("AddPropButton");
     }
     
     // Handle AddPropButton, RemovePropButton
@@ -362,6 +362,7 @@ public void respondUI(ViewEvent anEvent)
     if(anEvent.equals("PropNameText")) {
         prop.setName(anEvent.getStringValue());
         getView("PropsList", ListView.class).updateItems(getSelProp());
+        requestFocus("AddPropButton");
     }
     
     // Handle FieldTypeList
