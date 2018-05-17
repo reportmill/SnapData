@@ -13,6 +13,9 @@ public class TableEditor extends ViewOwner {
     // The Snap site that this table box works for
     DataSite               _site;
     
+    // The DialogBox currently running TableEditor
+    DialogBox              _dbox;
+    
     // The DataTable
     DataTable              _table;
 
@@ -61,11 +64,11 @@ public DataTable showPanel(View aView)
     _entity.addPropChangeListener(_entityLsnr);
     
     // Create DialogBox that resets OK.DefaultButton property and has TableEditor UI as content
-    DialogBox dbox = new DialogBox("Configure Table Panel");
-    dbox.setContent(getUI()); dbox.setConfirmOnEnter(false);
+    _dbox = new DialogBox("Configure Table Panel");
+    _dbox.setContent(getUI()); _dbox.setConfirmOnEnter(false);
     
     // Show option pane
-    if(!dbox.showConfirmDialog(aView)) return null;
+    if(!_dbox.showConfirmDialog(aView)) return null;
     
     // Stop listening to property changes
     _entity.removePropChangeListener(_entityLsnr);
@@ -297,6 +300,9 @@ protected void initUI()
     propNameText.addPropChangeListener(
         pc -> { if(propNameText.isFocused()) runLater(() -> propNameText.selectAll()); },
         View.Focused_Prop);
+        
+    // Add EnterAction to focus confirm button
+    addKeyActionHandler("EnterAction", "ENTER");
 }
 
 /**
@@ -339,7 +345,7 @@ public void respondUI(ViewEvent anEvent)
     // Handle TableNameText
     if(anEvent.equals("TableNameText")) {
         getEntity().setName(anEvent.getStringValue());
-        requestFocus("AddPropButton");
+        runLater(() -> requestFocus("PropNameText"));
     }
     
     // Handle AddPropButton, RemovePropButton
@@ -362,11 +368,16 @@ public void respondUI(ViewEvent anEvent)
     if(anEvent.equals("PropNameText")) {
         prop.setName(anEvent.getStringValue());
         getView("PropsList", ListView.class).updateItems(getSelProp());
-        requestFocus("AddPropButton");
+        runLater(() -> requestFocus("AddPropButton"));
     }
     
     // Handle FieldTypeList
     if(anEvent.equals("FieldTypeList")) prop.setTypeName(anEvent.getStringValue());
+    
+    // Handle EnterAction: Focus confirm button unless on text
+    if(anEvent.equals("EnterAction")) {
+        if(!getView("TableNameText").isFocused() && !getView("PropNameText").isFocused())
+            _dbox.getConfirmButton().requestFocus(); }
 }
 
 }
